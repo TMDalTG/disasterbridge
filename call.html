@@ -3,71 +3,147 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>DisasterBridge — Call Simulator</title>
+<title>DisasterBridge — Call + Live Card</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: 'Segoe UI', sans-serif; background: #0d1117; color: #e6edf3; min-height: 100vh; }
+
   nav { background: #161b22; border-bottom: 1px solid #21262d; padding: 14px 24px; display: flex; align-items: center; gap: 16px; }
   nav a { color: #58a6ff; text-decoration: none; font-size: 0.9rem; }
   nav h2 { font-size: 1rem; color: #e6edf3; margin-left: auto; margin-right: auto; }
-  #key-banner { background: #161b22; border-bottom: 2px solid #d29922; padding: 14px 24px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+
+  #key-banner { background: #161b22; border-bottom: 2px solid #d29922; padding: 12px 24px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
   #key-banner label { font-size: 0.85rem; color: #d29922; white-space: nowrap; }
-  #key-banner input { flex: 1; min-width: 260px; background: #0d1117; border: 1px solid #30363d; border-radius: 6px; padding: 8px 12px; color: #e6edf3; font-size: 0.88rem; font-family: monospace; }
-  #key-banner button { background: #d29922; color: #0d1117; border: none; border-radius: 6px; padding: 8px 16px; font-size: 0.85rem; font-weight: 700; cursor: pointer; }
+  #key-banner input { flex: 1; min-width: 240px; background: #0d1117; border: 1px solid #30363d; border-radius: 6px; padding: 7px 11px; color: #e6edf3; font-size: 0.86rem; font-family: monospace; }
+  #key-banner button { background: #d29922; color: #0d1117; border: none; border-radius: 6px; padding: 7px 15px; font-size: 0.83rem; font-weight: 700; cursor: pointer; }
   #key-banner button:hover { background: #e3b341; }
-  #key-status { font-size: 0.78rem; width: 100%; color: #8b949e; }
+  #key-status { font-size: 0.76rem; width: 100%; color: #8b949e; }
   #key-status.saved { color: #3fb950; }
-  .container { max-width: 860px; margin: 0 auto; padding: 30px 20px; }
-  h1 { font-size: 1.6rem; margin-bottom: 6px; }
-  .subtitle { color: #8b949e; font-size: 0.9rem; margin-bottom: 20px; }
-  .mode-toggle { display: flex; border: 1px solid #30363d; border-radius: 8px; overflow: hidden; width: fit-content; margin-bottom: 24px; }
-  .mode-btn { padding: 9px 20px; font-size: 0.85rem; border: none; cursor: pointer; background: transparent; color: #8b949e; transition: background 0.15s, color 0.15s; }
+
+  /* ── SPLIT LAYOUT ── */
+  .split-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    max-width: 1340px;
+    margin: 0 auto;
+    padding: 22px 20px;
+    align-items: start;
+  }
+  @media(max-width: 960px) { .split-layout { grid-template-columns: 1fr; } }
+
+  /* ── CALL PANEL ── */
+  .call-panel h1 { font-size: 1.45rem; margin-bottom: 3px; }
+  .subtitle { color: #8b949e; font-size: 0.85rem; margin-bottom: 16px; }
+
+  .mode-toggle { display: flex; border: 1px solid #30363d; border-radius: 8px; overflow: hidden; width: fit-content; margin-bottom: 16px; }
+  .mode-btn { padding: 8px 18px; font-size: 0.82rem; border: none; cursor: pointer; background: transparent; color: #8b949e; transition: background 0.15s, color 0.15s; }
   .mode-btn.active { background: #1f6feb; color: #fff; font-weight: 700; }
   .mode-btn:hover:not(.active) { background: #21262d; color: #e6edf3; }
-  .profiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; margin-bottom: 28px; }
-  .profile { background: #161b22; border: 2px solid #21262d; border-radius: 10px; padding: 16px; cursor: pointer; transition: border-color 0.15s; }
+
+  .profiles { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 18px; }
+  .profile { background: #161b22; border: 2px solid #21262d; border-radius: 10px; padding: 12px 13px; cursor: pointer; transition: border-color 0.15s; }
   .profile:hover, .profile.active { border-color: #58a6ff; }
-  .profile h3 { font-size: 0.95rem; color: #e6edf3; margin-bottom: 6px; }
-  .profile p { font-size: 0.78rem; color: #8b949e; line-height: 1.5; }
-  .ptag { display: inline-block; font-size: 0.7rem; padding: 2px 8px; border-radius: 12px; background: #1f3a6e; color: #58a6ff; margin-top: 8px; margin-right: 4px; }
-  .call-box { background: #161b22; border: 1px solid #21262d; border-radius: 12px; padding: 24px; }
-  .call-box h2 { font-size: 1rem; color: #8b949e; margin-bottom: 16px; text-transform: uppercase; letter-spacing: 1px; }
-  #transcript { background: #0d1117; border: 1px solid #21262d; border-radius: 8px; padding: 16px; min-height: 260px; max-height: 420px; overflow-y: auto; font-size: 0.88rem; line-height: 1.7; color: #c9d1d9; }
-  .msg { margin-bottom: 12px; }
-  .msg .who { font-weight: 700; font-size: 0.78rem; margin-bottom: 2px; }
+  .profile.unknown-profile { border-style: dashed; border-color: #30363d; }
+  .profile.unknown-profile:hover, .profile.unknown-profile.active { border-style: solid; border-color: #f0883e; }
+  .profile h3 { font-size: 0.88rem; color: #e6edf3; margin-bottom: 4px; }
+  .profile p { font-size: 0.74rem; color: #8b949e; line-height: 1.45; }
+  .ptag { display: inline-block; font-size: 0.67rem; padding: 2px 7px; border-radius: 10px; background: #1f3a6e; color: #58a6ff; margin-top: 5px; margin-right: 3px; }
+  .ptag.orange { background: #2e1a0a; color: #f0883e; }
+
+  .call-box { background: #161b22; border: 1px solid #21262d; border-radius: 12px; padding: 18px; }
+  .call-box-header { font-size: 0.78rem; color: #8b949e; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; }
+
+  #transcript { background: #0d1117; border: 1px solid #21262d; border-radius: 8px; padding: 13px; min-height: 260px; max-height: 400px; overflow-y: auto; font-size: 0.85rem; line-height: 1.7; color: #c9d1d9; }
+  .msg { margin-bottom: 10px; }
+  .msg .who { font-weight: 700; font-size: 0.73rem; margin-bottom: 2px; letter-spacing: 0.5px; }
   .msg.ai .who { color: #58a6ff; }
   .msg.resident .who { color: #3fb950; }
   .msg.you .who { color: #f0883e; }
+  .msg.system { opacity: 0.65; }
   .msg.system .who { color: #8b949e; }
-  .msg.system { opacity: 0.7; }
-  .controls { display: flex; gap: 12px; margin-top: 16px; flex-wrap: wrap; }
-  #place-call { background: #1f6feb; color: #fff; border: none; border-radius: 8px; padding: 12px 24px; font-size: 0.9rem; font-weight: 700; cursor: pointer; }
+
+  .controls { display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap; }
+  #place-call { background: #1f6feb; color: #fff; border: none; border-radius: 8px; padding: 10px 20px; font-size: 0.88rem; font-weight: 700; cursor: pointer; }
   #place-call:hover { background: #388bfd; }
   #place-call:disabled { opacity: 0.4; cursor: not-allowed; }
-  .ghost-btn { background: transparent; border: 1px solid #30363d; color: #8b949e; border-radius: 8px; padding: 12px 16px; font-size: 0.88rem; cursor: pointer; }
+  .ghost-btn { background: transparent; border: 1px solid #30363d; color: #8b949e; border-radius: 8px; padding: 10px 14px; font-size: 0.83rem; cursor: pointer; }
   .ghost-btn:hover { border-color: #58a6ff; color: #58a6ff; }
-  #interactive-controls { display: none; margin-top: 16px; }
-  .user-input-row { display: flex; gap: 10px; margin-top: 12px; }
-  #user-input { flex: 1; background: #0d1117; border: 1px solid #30363d; border-radius: 8px; padding: 10px 14px; color: #e6edf3; font-size: 0.88rem; font-family: inherit; resize: none; }
+
+  #interactive-controls { display: none; margin-top: 14px; }
+  .user-input-row { display: flex; gap: 9px; margin-top: 10px; }
+  #user-input { flex: 1; background: #0d1117; border: 1px solid #30363d; border-radius: 8px; padding: 9px 12px; color: #e6edf3; font-size: 0.85rem; font-family: inherit; resize: none; }
   #user-input:focus { outline: none; border-color: #f0883e; }
-  #send-btn { background: #f0883e; color: #fff; border: none; border-radius: 8px; padding: 10px 18px; font-size: 0.88rem; font-weight: 700; cursor: pointer; align-self: flex-end; }
+  #send-btn { background: #f0883e; color: #fff; border: none; border-radius: 8px; padding: 9px 16px; font-size: 0.85rem; font-weight: 700; cursor: pointer; align-self: flex-end; }
   #send-btn:hover { background: #e3792e; }
   #send-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-  #start-call-btn { background: #1f6feb; color: #fff; border: none; border-radius: 8px; padding: 12px 24px; font-size: 0.9rem; font-weight: 700; cursor: pointer; }
-  #start-call-btn:hover { background: #388bfd; }
+  #start-call-btn { background: #1f6feb; color: #fff; border: none; border-radius: 8px; padding: 10px 20px; font-size: 0.88rem; font-weight: 700; cursor: pointer; }
   #start-call-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-  .hint { font-size: 0.78rem; color: #8b949e; margin-top: 10px; }
+  .hint { font-size: 0.74rem; color: #8b949e; margin-top: 8px; }
   .hint strong { color: #f0883e; }
-  .typing-indicator { color: #484f58; font-style: italic; font-size: 0.82rem; }
-  .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid #ffffff44; border-top-color: #fff; border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: middle; margin-right: 8px; }
+  .typing-indicator { color: #484f58; font-style: italic; font-size: 0.8rem; }
+
+  /* ── CARD PANEL ── */
+  .card-panel { position: sticky; top: 16px; }
+
+  .card-panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+  .card-panel-title { font-size: 0.78rem; color: #8b949e; text-transform: uppercase; letter-spacing: 1px; }
+
+  .source-badge { font-size: 0.68rem; padding: 3px 9px; border-radius: 10px; font-weight: 600; transition: all 0.3s; }
+  .source-badge.registry { background: #1f3a6e; color: #58a6ff; }
+  .source-badge.live { background: #1a3a1a; color: #3fb950; }
+  .source-badge.live::before { content: '● '; animation: blink 1s infinite; }
+  .source-badge.waiting { background: #21262d; color: #484f58; }
+  @keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+  /* Waiting state */
+  .card-waiting { background: #161b22; border: 1px dashed #21262d; border-radius: 12px; padding: 52px 20px; text-align: center; color: #484f58; font-size: 0.86rem; line-height: 1.7; }
+  .card-waiting .wi { font-size: 2rem; margin-bottom: 12px; }
+
+  /* Card */
+  .responder-card { background: #0d1117; border: 2px solid #21262d; border-radius: 12px; padding: 18px; font-size: 0.82rem; line-height: 1.65; color: #c9d1d9; transition: border-color 0.4s; }
+  .responder-card.from-registry { border-color: #1f6feb44; }
+  .responder-card.live-update { border-color: #3fb950; box-shadow: 0 0 0 2px #3fb95018; }
+
+  .card-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px; padding-bottom: 12px; border-bottom: 1px solid #21262d; }
+  #c-name { font-size: 1.05rem; font-weight: 700; color: #e6edf3; }
+  #c-reason { font-size: 0.73rem; color: #8b949e; margin-top: 3px; }
+  #c-priority { padding: 3px 10px; border-radius: 12px; font-size: 0.68rem; font-weight: 700; color: #fff; background: #484f58; white-space: nowrap; }
+  #c-priority.CRITICAL { background: #f85149; }
+  #c-priority.HIGH { background: #d29922; }
+  #c-priority.STANDARD { background: #238636; }
+
+  .csec { margin-bottom: 12px; }
+  .csec-title { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 1px; color: #58a6ff; margin-bottom: 5px; font-weight: 700; }
+  .csec-title.red { color: #f85149; }
+  .ctag { display: inline-block; background: #1f3a6e; color: #58a6ff; padding: 2px 7px; border-radius: 10px; font-size: 0.68rem; margin-right: 4px; margin-bottom: 3px; }
+  .ctag.alert { background: #3a0f0f; color: #f85149; }
+
+  /* Field flash on update */
+  @keyframes fieldFlash { 0% { background: #1a3a1a; border-radius: 4px; } 100% { background: transparent; } }
+  .flash { animation: fieldFlash 0.7s ease-out; }
+
+  .empty-field { color: #484f58; font-style: italic; }
+
+  #print-card-btn { display: none; background: #1f6feb; color: #fff; border: none; border-radius: 6px; padding: 7px 14px; font-size: 0.78rem; cursor: pointer; margin-top: 10px; width: 100%; }
+  #print-card-btn:hover { background: #388bfd; }
+
+  .card-footer-ts { font-size: 0.66rem; color: #484f58; margin-top: 12px; border-top: 1px solid #21262d; padding-top: 8px; }
+
+  .spinner { display: inline-block; width: 13px; height: 13px; border: 2px solid #ffffff33; border-top-color: #fff; border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: middle; margin-right: 6px; }
   @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Extraction indicator */
+  #extract-indicator { font-size: 0.7rem; color: #3fb950; opacity: 0; transition: opacity 0.3s; margin-top: 6px; }
+  #extract-indicator.show { opacity: 1; }
 </style>
 </head>
 <body>
+
 <nav>
   <a href="index.html">← Home</a>
   <span style="color:#484f58">/</span>
-  <h2>📞 Outbound Call Simulator</h2>
+  <h2>📞 Call Simulator + Live Responder Card</h2>
 </nav>
 
 <div id="key-banner">
@@ -77,95 +153,241 @@
   <div id="key-status">Key stays in your browser session only — never stored or sent to us. Free key: <a href="https://console.groq.com/keys" target="_blank" style="color:#58a6ff">console.groq.com/keys</a></div>
 </div>
 
-<div class="container">
-  <h1>AI Welfare Call Simulator</h1>
-  <p class="subtitle">The AI plays the emergency dispatcher. Auto mode shows a full simulated call. Interactive mode lets you respond as the resident.</p>
+<div class="split-layout">
 
-  <div class="mode-toggle">
-    <button class="mode-btn active" id="btn-auto" onclick="setMode('auto')">🤖 Auto — AI plays both sides</button>
-    <button class="mode-btn" id="btn-interactive" onclick="setMode('interactive')">🎭 Interactive — You speak as resident</button>
-  </div>
+  <!-- ════════ LEFT: CALL PANEL ════════ -->
+  <div class="call-panel">
+    <h1>AI Welfare Call Simulator</h1>
+    <p class="subtitle">Auto mode: AI plays both sides. Interactive: you respond as the resident. The card updates live from each exchange.</p>
 
-  <div class="profiles">
-    <div class="profile active" onclick="selectProfile(this,'margaret')">
-      <h3>Margaret T., 74</h3>
-      <p>Oxygen dependent, limited mobility, lives alone. Prefers slow, clear speech. Easily anxious.</p>
-      <span class="ptag">Oxygen</span><span class="ptag">Mobility aid</span><span class="ptag">Elderly</span>
-    </div>
-    <div class="profile" onclick="selectProfile(this,'james')">
-      <h3>James R., 58</h3>
-      <p>Quadriplegic, ventilator dependent. Caregiver absent today. Needs medical team coordination.</p>
-      <span class="ptag">Ventilator</span><span class="ptag">Quad</span><span class="ptag">High priority</span>
-    </div>
-    <div class="profile" onclick="selectProfile(this,'aisha')">
-      <h3>Aisha M., 31</h3>
-      <p>Autism spectrum, non-verbal. Family member is primary contact. Needs calm, routine-focused language.</p>
-      <span class="ptag">ASD</span><span class="ptag">Non-verbal</span><span class="ptag">Family contact</span>
-    </div>
-  </div>
-
-  <div class="call-box">
-    <h2>Call Transcript</h2>
-    <div id="transcript">
-      <div class="msg system"><div class="who">SYSTEM</div>Select a profile and mode above, then start the call.</div>
+    <div class="mode-toggle">
+      <button class="mode-btn active" id="btn-auto" onclick="setMode('auto')">🤖 Auto — AI plays both sides</button>
+      <button class="mode-btn" id="btn-interactive" onclick="setMode('interactive')">🎭 Interactive — You speak as resident</button>
     </div>
 
-    <!-- AUTO MODE CONTROLS -->
-    <div class="controls" id="auto-controls">
-      <button id="place-call" onclick="placeAutoCall()">📞 Place Call</button>
-      <button class="ghost-btn" onclick="resetAll()">Clear</button>
-    </div>
-
-    <!-- INTERACTIVE MODE CONTROLS -->
-    <div id="interactive-controls">
-      <button id="start-call-btn" onclick="startInteractive()">📞 Start Call — AI speaks first</button>
-      <div class="user-input-row" id="input-row" style="display:none">
-        <textarea id="user-input" rows="2" placeholder="Type your reply as the resident... (Enter to send, Shift+Enter for new line)" onkeydown="handleKey(event)"></textarea>
-        <button id="send-btn" onclick="sendUserMsg()">Send ↵</button>
+    <div class="profiles">
+      <div class="profile active" onclick="selectProfile(this,'margaret')">
+        <h3>Margaret T., 74</h3>
+        <p>Oxygen dependent, limited mobility, lives alone. Easily anxious.</p>
+        <span class="ptag">Oxygen</span><span class="ptag">Mobility aid</span><span class="ptag">Elderly</span>
       </div>
-      <p class="hint" id="role-hint" style="display:none">You are speaking as <strong id="role-label"></strong>. Respond naturally — the AI dispatcher will reply.</p>
-      <button class="ghost-btn" id="clear-interactive-btn" onclick="resetAll()" style="display:none;margin-top:10px">End Call / Clear</button>
+      <div class="profile" onclick="selectProfile(this,'james')">
+        <h3>James R., 58</h3>
+        <p>Quadriplegic, ventilator dependent. Caregiver absent today.</p>
+        <span class="ptag">Ventilator</span><span class="ptag">Quad</span><span class="ptag">High priority</span>
+      </div>
+      <div class="profile" onclick="selectProfile(this,'aisha')">
+        <h3>Aisha M., 31</h3>
+        <p>Autism spectrum, non-verbal. Family member is primary contact.</p>
+        <span class="ptag">ASD</span><span class="ptag">Non-verbal</span><span class="ptag">Family contact</span>
+      </div>
+      <div class="profile unknown-profile" onclick="selectProfile(this,'unknown')">
+        <h3>Unknown Caller</h3>
+        <p>No registry entry — AI gathers info through the call. Card builds from scratch.</p>
+        <span class="ptag orange">New intake</span><span class="ptag orange">Unregistered</span>
+      </div>
+    </div>
+
+    <div class="call-box">
+      <div class="call-box-header">Call Transcript</div>
+      <div id="transcript">
+        <div class="msg system"><div class="who">SYSTEM</div>Select a profile and mode, then start the call.</div>
+      </div>
+
+      <!-- AUTO CONTROLS -->
+      <div class="controls" id="auto-controls">
+        <button id="place-call" onclick="placeAutoCall()">📞 Place Call</button>
+        <button class="ghost-btn" onclick="resetAll()">Clear</button>
+      </div>
+
+      <!-- INTERACTIVE CONTROLS -->
+      <div id="interactive-controls">
+        <button id="start-call-btn" onclick="startInteractive()">📞 Start Call — AI speaks first</button>
+        <div class="user-input-row" id="input-row" style="display:none">
+          <textarea id="user-input" rows="2" placeholder="Type your reply as the resident... (Enter to send, Shift+Enter for new line)" onkeydown="handleKey(event)"></textarea>
+          <button id="send-btn" onclick="sendUserMsg()">Send ↵</button>
+        </div>
+        <p class="hint" id="role-hint" style="display:none">You are speaking as <strong id="role-label"></strong>. Respond naturally — the AI dispatcher will reply.</p>
+        <button class="ghost-btn" id="clear-btn" onclick="resetAll()" style="display:none;margin-top:10px">End Call / Clear</button>
+      </div>
     </div>
   </div>
+
+  <!-- ════════ RIGHT: CARD PANEL ════════ -->
+  <div class="card-panel">
+    <div class="card-panel-header">
+      <div class="card-panel-title">Live Responder Card</div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span id="extract-indicator">⟳ Updating card...</span>
+        <span class="source-badge waiting" id="source-badge">Waiting</span>
+      </div>
+    </div>
+
+    <!-- WAITING STATE -->
+    <div class="card-waiting" id="card-waiting">
+      <div class="wi">📋</div>
+      <strong style="color:#8b949e">Card will appear here</strong><br>
+      Select a known profile to load registry data,<br>or start an Unknown Caller call to build from scratch.
+    </div>
+
+    <!-- LIVE CARD -->
+    <div class="responder-card" id="live-card" style="display:none">
+
+      <div class="card-top">
+        <div>
+          <div id="c-name">—</div>
+          <div id="c-reason"></div>
+        </div>
+        <span id="c-priority">—</span>
+      </div>
+
+      <div class="csec" id="sec-alerts" style="display:none">
+        <div class="csec-title">⚠ Alerts</div>
+        <div id="c-alert-tags"></div>
+      </div>
+
+      <div class="csec">
+        <div class="csec-title">Medical Profile</div>
+        <div id="c-med-tags"></div>
+        <p id="c-med-summary" style="margin-top:6px"></p>
+      </div>
+
+      <div class="csec" id="sec-time" style="display:none">
+        <div class="csec-title">⏱ Time Sensitive</div>
+        <div id="c-time" style="color:#f85149"></div>
+      </div>
+
+      <div class="csec">
+        <div class="csec-title">Communication Guide</div>
+        <div id="c-comms"></div>
+      </div>
+
+      <div class="csec" id="sec-actions" style="display:none">
+        <div class="csec-title">Immediate Actions</div>
+        <div id="c-actions"></div>
+      </div>
+
+      <div class="csec" id="sec-donot" style="display:none">
+        <div class="csec-title red">Do NOT</div>
+        <div id="c-donot" style="color:#f85149"></div>
+      </div>
+
+      <div class="csec" id="sec-resources" style="display:none">
+        <div class="csec-title">Resources Needed</div>
+        <div id="c-resources"></div>
+      </div>
+
+      <div class="csec" id="sec-contact" style="display:none">
+        <div class="csec-title">Emergency Contact</div>
+        <div id="c-contact"></div>
+      </div>
+
+      <div class="card-footer-ts" id="c-footer"></div>
+    </div>
+
+    <button id="print-card-btn" onclick="window.print()">🖨️ Print Card</button>
+  </div>
+
 </div>
 
 <script>
-let currentProfile = 'margaret';
+// ─────────────────────────────────────────
+//  STATE
+// ─────────────────────────────────────────
 let groqKey = '';
+let currentProfile = 'margaret';
 let mode = 'auto';
 let history = [];
 let callLive = false;
+let transcriptLines = [];
 
+// ─────────────────────────────────────────
+//  PROFILES — known callers carry preset card data
+// ─────────────────────────────────────────
 const profiles = {
   margaret: {
     label: 'Margaret T. (74, oxygen dependent)',
     opener: 'Placing welfare check call to Margaret T., 74 — oxygen dependent, mobility aid...',
     system: `You are an emergency AI dispatcher from Houston Emergency Services making a welfare check call during Hurricane Beryl.
 You are calling Margaret Thompson, 74 — oxygen-dependent, uses a mobility aid, lives alone, and can become anxious.
-Speak slowly, clearly, reassuringly. Short sentences. Goals: confirm oxygen supply hours remaining, medication status, whether she wants shelter transport.
-Calm her first if distressed. Max 3 sentences per turn — this is a phone call.`,
-    autoPrompt: 'Run the full welfare check call. Label each line "AI:" or "RESIDENT:". About 8-10 exchanges total.'
+Speak slowly, clearly, reassuringly. Short sentences. Goals: confirm oxygen supply hours remaining, medication status, whether she wants shelter transport. Calm her first if distressed.
+Max 3 sentences per turn — this is a phone call.`,
+    autoPrompt: 'Run the full welfare check call. Label each line "AI:" or "RESIDENT:". About 8-10 exchanges total.',
+    presetCard: {
+      name: 'Margaret Thompson, 74',
+      priority: 'CRITICAL',
+      priority_reason: 'Oxygen dependent — imminent power outage risk',
+      medical_tags: ['Oxygen dependent', 'Portable concentrator', 'Walker', 'Lisinopril', 'Metformin'],
+      alert_tags: ['Power outage — ~4h oxygen remaining'],
+      medical_summary: 'Oxygen dependent with ~4h battery remaining on portable concentrator. Uses walker. Daily medications: lisinopril 10mg, metformin.',
+      communication_guide: 'Hard of hearing (wears hearing aid). Speaks slowly. Easily anxious — use calm, reassuring tone and short sentences. No smartphone.',
+      immediate_actions: ['Confirm exact oxygen hours remaining', 'Assess willingness to evacuate', 'Coordinate pet-friendly transport — has dog (Buddy)'],
+      do_not: ['Rush or pressure her', 'Use complex medical jargon', 'Suggest leaving her dog behind'],
+      resources_needed: 'Accessible transport, backup oxygen supply, pet-friendly shelter',
+      contact: 'Daughter Sarah Thompson — 713-555-0142',
+      time_sensitive: 'Oxygen ~4h remaining. Power outage ongoing since 14:00.'
+    }
   },
   james: {
     label: 'James R. (58, ventilator dependent)',
-    opener: 'Placing priority medical welfare call to James R., 58 — ventilator dependent, caregiver absent...',
+    opener: 'Placing priority medical call to James R., 58 — ventilator dependent, caregiver absent...',
     system: `You are an emergency AI dispatcher from Houston Emergency Services making a welfare check call during Hurricane Beryl.
 You are calling James Robinson, 58 — quadriplegic, ventilator-dependent, caregiver absent today.
 Be efficient and professional. Goals: ventilator battery time remaining, medication supply, coordinate medical team arrival.
 Max 3 sentences per turn — this is a phone call.`,
-    autoPrompt: 'Run the full welfare check call. Label each line "AI:" or "RESIDENT:". About 8-10 exchanges total.'
+    autoPrompt: 'Run the full welfare check call. Label each line "AI:" or "RESIDENT:". About 8-10 exchanges total.',
+    presetCard: {
+      name: 'James Robinson, 58',
+      priority: 'CRITICAL',
+      priority_reason: 'Ventilator dependent, caregiver absent, battery ~6h remaining',
+      medical_tags: ['Quadriplegic (C4)', 'Ventilator dependent', 'Suction every 2h', 'Baclofen', 'Lisinopril', 'Warfarin'],
+      alert_tags: ['Ventilator battery ~6h', 'Caregiver absent', 'Suction due every 2h'],
+      medical_summary: 'C4 quadriplegic, ventilator dependent with ~6h battery. Requires airway suction every 2 hours. Medications: baclofen, lisinopril, warfarin.',
+      communication_guide: 'Speaks clearly. Fully cognitively intact. Prefers direct, medical-level communication — no euphemisms.',
+      immediate_actions: ['Dispatch medical team immediately', 'Confirm exact ventilator battery hours', 'Arrange 2-person lift + accessible transport'],
+      do_not: ['Send non-medical personnel alone', 'Delay — ventilator failure is fatal', 'Attempt transfer without 2-person minimum'],
+      resources_needed: '2-person medical team, wheelchair-accessible van, portable ventilator backup',
+      contact: 'Wife Carol Robinson — 713-555-0298 | Backup caregiver agency: 713-555-0100',
+      time_sensitive: 'Ventilator battery ~6h. Suction due every 2h. Warfarin dosage timing critical.'
+    }
   },
   aisha: {
     label: "Grace Mensah (Aisha's mother)",
-    opener: "Placing welfare call to Aisha M.'s family — autism spectrum, non-verbal, routine disruption...",
+    opener: "Placing welfare call to Aisha M.'s household — autism spectrum, non-verbal, routine disrupted...",
     system: `You are an emergency AI dispatcher from Houston Emergency Services making a welfare check call during Hurricane Beryl.
-Aisha Mensah, 31, is autistic and non-verbal. Her mother Grace answers the phone.
-Use calm, clear language. Goals: Aisha's current state, medications, comfort items, whether they need transport to an autism-friendly shelter.
-Be empathetic to Grace's stress. Max 3 sentences per turn — this is a phone call.`,
-    autoPrompt: "Run the full welfare check call. Grace (the mother) answers. Label each line \"AI:\" or \"RESIDENT:\". About 8-10 exchanges total."
+Aisha Mensah, 31, is autistic and non-verbal. Her mother Grace answers.
+Use calm, clear language. Goals: Aisha's current state, medications, comfort items, whether they need transport to an autism-friendly shelter. Be empathetic to Grace's stress.
+Max 3 sentences per turn — this is a phone call.`,
+    autoPrompt: 'Run the full welfare check call. Grace (the mother) answers. Label each line "AI:" or "RESIDENT:". About 8-10 exchanges total.',
+    presetCard: {
+      name: 'Aisha Mensah, 31',
+      priority: 'HIGH',
+      priority_reason: 'Non-verbal, autism spectrum, severe routine disruption',
+      medical_tags: ['Autism spectrum (non-verbal)', 'AAC device user', 'Sensory sensitivity', 'Risperidone'],
+      alert_tags: ['Do NOT address Aisha directly', 'Sensory overload — currently distressed'],
+      medical_summary: 'Non-verbal, autism spectrum. Communicates via AAC device. Extreme sensory sensitivities to noise, crowds, and bright lights. Daily risperidone.',
+      communication_guide: 'ALWAYS address mother Grace — never Aisha directly. Keep environment quiet. No sudden movements. No rushing.',
+      immediate_actions: ['Contact mother Grace first — always', 'Ensure quiet, calm approach', 'Allow comfort items: headphones, fidget tools, tablet'],
+      do_not: ['Speak directly to or about Aisha within earshot', 'Make sudden movements or loud sounds', 'Restrain under any circumstances'],
+      resources_needed: 'Autism-friendly shelter (away from crowds), family unit transport',
+      contact: 'Mother Grace Mensah — 713-555-0377 | Father Emmanuel — 713-555-0388',
+      time_sensitive: 'Routine severely disrupted. Sensory overload ongoing. Shelter must be autism-friendly and low-stimulation.'
+    }
+  },
+  unknown: {
+    label: 'Unknown Caller',
+    opener: 'Incoming call — no registry match. Initiating new intake...',
+    system: `You are an emergency AI dispatcher from Houston Emergency Services receiving an inbound welfare call during Hurricane Beryl.
+The caller is unregistered. Warmly introduce yourself, then systematically gather: full name and age, any disability or medical needs, medications or equipment, living situation, whether they need shelter or transport, and an emergency contact.
+Be warm, calm, and methodical. One or two questions at a time. Max 3 sentences per turn — this is a phone call.`,
+    autoPrompt: 'Run a realistic inbound welfare call from an unknown caller. They turn out to have mobility issues and need medication and are worried about flooding. Gather their full intake naturally. Label each line "AI:" or "RESIDENT:". About 10-12 exchanges.',
+    presetCard: null
   }
 };
 
+// ─────────────────────────────────────────
+//  KEY
+// ─────────────────────────────────────────
 function saveKey() {
   const inp = document.getElementById('api-key-input');
   groqKey = inp.value.trim();
@@ -180,6 +402,9 @@ function saveKey() {
   }
 }
 
+// ─────────────────────────────────────────
+//  MODE & PROFILE
+// ─────────────────────────────────────────
 function setMode(m) {
   mode = m;
   document.getElementById('btn-auto').classList.toggle('active', m === 'auto');
@@ -196,6 +421,9 @@ function selectProfile(el, name) {
   resetAll();
 }
 
+// ─────────────────────────────────────────
+//  TRANSCRIPT
+// ─────────────────────────────────────────
 function addMsg(role, text, customLabel) {
   const t = document.getElementById('transcript');
   const ph = t.querySelector('.msg.system');
@@ -203,20 +431,27 @@ function addMsg(role, text, customLabel) {
   const d = document.createElement('div');
   d.className = 'msg ' + role;
   const labels = { ai: 'AI DISPATCHER', resident: 'RESIDENT', you: 'YOU', system: 'SYSTEM' };
-  d.innerHTML = '<div class="who">' + (customLabel || labels[role] || role.toUpperCase()) + '</div>' + text;
+  const label = customLabel || labels[role] || role.toUpperCase();
+  d.innerHTML = '<div class="who">' + label + '</div>' + text;
   t.appendChild(d);
   t.scrollTop = t.scrollHeight;
+  if (role !== 'system') {
+    transcriptLines.push(label + ': ' + text);
+  }
   return d;
 }
 
 function resetTranscript() {
-  document.getElementById('transcript').innerHTML = '<div class="msg system"><div class="who">SYSTEM</div>Select a profile and mode above, then start the call.</div>';
+  document.getElementById('transcript').innerHTML = '<div class="msg system"><div class="who">SYSTEM</div>Select a profile and mode, then start the call.</div>';
+  transcriptLines = [];
 }
 
 function resetAll() {
   history = [];
   callLive = false;
+  transcriptLines = [];
   resetTranscript();
+
   // Reset interactive UI
   const sb = document.getElementById('start-call-btn');
   if (sb) { sb.style.display = 'inline-block'; sb.disabled = false; sb.innerHTML = '📞 Start Call — AI speaks first'; }
@@ -224,54 +459,284 @@ function resetAll() {
   if (ir) ir.style.display = 'none';
   const rh = document.getElementById('role-hint');
   if (rh) rh.style.display = 'none';
-  const cb = document.getElementById('clear-interactive-btn');
+  const cb = document.getElementById('clear-btn');
   if (cb) cb.style.display = 'none';
+
+  // Card: show preset or waiting state
+  const p = profiles[currentProfile];
+  if (p && p.presetCard) {
+    renderCard(p.presetCard, 'registry');
+  } else {
+    showCardWaiting();
+  }
 }
 
-// ── AUTO MODE ──
+// ─────────────────────────────────────────
+//  CARD — RENDER
+// ─────────────────────────────────────────
+function showCardWaiting() {
+  document.getElementById('card-waiting').style.display = 'block';
+  document.getElementById('live-card').style.display = 'none';
+  document.getElementById('print-card-btn').style.display = 'none';
+  const badge = document.getElementById('source-badge');
+  badge.textContent = 'Waiting';
+  badge.className = 'source-badge waiting';
+}
+
+function renderCard(c, source) {
+  document.getElementById('card-waiting').style.display = 'none';
+  const card = document.getElementById('live-card');
+  card.style.display = 'block';
+  document.getElementById('print-card-btn').style.display = 'block';
+
+  // Source badge
+  const badge = document.getElementById('source-badge');
+  if (source === 'registry') {
+    badge.textContent = '📂 Registry';
+    badge.className = 'source-badge registry';
+    card.className = 'responder-card from-registry';
+  } else {
+    badge.textContent = 'Live';
+    badge.className = 'source-badge live';
+    card.className = 'responder-card live-update';
+    setTimeout(() => card.classList.remove('live-update'), 1200);
+  }
+
+  // Name
+  setField('c-name', c.name || '—');
+
+  // Priority badge
+  const pb = document.getElementById('c-priority');
+  const pr = c.priority || '—';
+  pb.textContent = pr;
+  pb.className = pr; // maps to CSS: .CRITICAL, .HIGH, .STANDARD
+
+  setField('c-reason', c.priority_reason || '');
+
+  // Alerts
+  const alertSec = document.getElementById('sec-alerts');
+  if (c.alert_tags && c.alert_tags.length) {
+    setField('c-alert-tags', c.alert_tags.map(t => '<span class="ctag alert">⚠ ' + t + '</span>').join(''));
+    alertSec.style.display = 'block';
+  } else {
+    alertSec.style.display = 'none';
+  }
+
+  // Medical tags + summary
+  const medHtml = (c.medical_tags || []).map(t => '<span class="ctag">' + t + '</span>').join('');
+  setField('c-med-tags', medHtml);
+  setField('c-med-summary', c.medical_summary || '<span class="empty-field">Gathering from call...</span>');
+
+  // Time sensitive
+  const timeSec = document.getElementById('sec-time');
+  if (c.time_sensitive) {
+    setField('c-time', c.time_sensitive);
+    timeSec.style.display = 'block';
+  } else {
+    timeSec.style.display = 'none';
+  }
+
+  // Communication guide
+  setField('c-comms', c.communication_guide || '<span class="empty-field">Listening...</span>');
+
+  // Immediate actions
+  const actSec = document.getElementById('sec-actions');
+  if (c.immediate_actions && c.immediate_actions.length) {
+    setField('c-actions', c.immediate_actions.map((a, i) => '<div>' + (i+1) + '. ' + a + '</div>').join(''));
+    actSec.style.display = 'block';
+  } else {
+    actSec.style.display = 'none';
+  }
+
+  // Do NOT
+  const donotSec = document.getElementById('sec-donot');
+  if (c.do_not && c.do_not.length) {
+    setField('c-donot', c.do_not.map(d => '<div>✗ ' + d + '</div>').join(''));
+    donotSec.style.display = 'block';
+  } else {
+    donotSec.style.display = 'none';
+  }
+
+  // Resources
+  const resSec = document.getElementById('sec-resources');
+  if (c.resources_needed) {
+    setField('c-resources', c.resources_needed);
+    resSec.style.display = 'block';
+  } else {
+    resSec.style.display = 'none';
+  }
+
+  // Contact
+  const conSec = document.getElementById('sec-contact');
+  if (c.contact) {
+    setField('c-contact', c.contact);
+    conSec.style.display = 'block';
+  } else {
+    conSec.style.display = 'none';
+  }
+
+  document.getElementById('c-footer').textContent =
+    'DisasterBridge AI · ' + new Date().toLocaleTimeString() +
+    (source === 'registry' ? ' · Loaded from registry' : ' · Updated from live call') +
+    ' · Authorized emergency use only';
+}
+
+function setField(id, html) {
+  const el = document.getElementById(id);
+  if (!el || el.innerHTML === html) return;
+  el.innerHTML = html;
+  el.classList.remove('flash');
+  void el.offsetWidth;
+  el.classList.add('flash');
+  setTimeout(() => el.classList.remove('flash'), 800);
+}
+
+// ─────────────────────────────────────────
+//  CARD EXTRACTION — runs after each AI turn
+// ─────────────────────────────────────────
+async function extractAndUpdateCard() {
+  if (!groqKey || transcriptLines.length < 2) return;
+
+  // Show extraction indicator
+  const ind = document.getElementById('extract-indicator');
+  ind.classList.add('show');
+
+  const transcript = transcriptLines.join('\n');
+  const prompt = `You are extracting structured emergency intake data from a live welfare call transcript.
+
+Transcript so far:
+${transcript}
+
+Extract only what is actually stated in the transcript. Do not infer or invent.
+Return ONLY a valid JSON object — no markdown, no explanation:
+{
+  "name": "caller full name and age if mentioned, else null",
+  "priority": "CRITICAL or HIGH or STANDARD — CRITICAL if life support or immediate danger",
+  "priority_reason": "one sentence reason based on what is known",
+  "medical_tags": ["short tag per medical fact mentioned"],
+  "alert_tags": ["urgent alerts only — equipment failure, flood risk, immediate danger"],
+  "medical_summary": "2-3 sentence summary of medical needs from the call",
+  "communication_guide": "communication approach based on what has emerged in the call",
+  "immediate_actions": ["actionable items that emerge from the call"],
+  "do_not": ["things to avoid mentioned or implied by the call"],
+  "resources_needed": "what resources the caller seems to need",
+  "contact": "contact name and number if mentioned, else null",
+  "time_sensitive": "any time-critical information mentioned, else null"
+}`;
+
+  try {
+    const raw = await callGroq([{ role: 'user', content: prompt }], 800, 0.2);
+    const clean = raw.replace(/```json|```/g, '').trim();
+    const extracted = JSON.parse(clean);
+
+    const preset = profiles[currentProfile].presetCard;
+    let final;
+
+    if (preset) {
+      // Merge: preset is the baseline, call fills in or overrides specific fields
+      final = { ...preset };
+
+      // Update fields where the call gives us real-time intel
+      if (extracted.time_sensitive) final.time_sensitive = extracted.time_sensitive;
+
+      // Accumulate tags from the call
+      if (extracted.medical_tags && extracted.medical_tags.length) {
+        final.medical_tags = [...new Set([...preset.medical_tags, ...extracted.medical_tags])];
+      }
+      if (extracted.alert_tags && extracted.alert_tags.length) {
+        final.alert_tags = [...new Set([...preset.alert_tags, ...extracted.alert_tags])];
+      }
+
+      // Update contact if newly provided during call
+      if (extracted.contact && extracted.contact !== preset.contact) {
+        final.contact = extracted.contact;
+      }
+
+      // Update actions if call revealed something new
+      if (extracted.immediate_actions && extracted.immediate_actions.length) {
+        const newActions = extracted.immediate_actions.filter(a =>
+          !preset.immediate_actions.some(pa => pa.toLowerCase().includes(a.toLowerCase().slice(0, 20)))
+        );
+        if (newActions.length) {
+          final.immediate_actions = [...preset.immediate_actions, ...newActions];
+        }
+      }
+    } else {
+      // Unknown caller — use extracted data as-is
+      final = extracted;
+    }
+
+    renderCard(final, 'live');
+  } catch (e) {
+    console.warn('Card extraction failed:', e.message);
+  }
+
+  ind.classList.remove('show');
+}
+
+// ─────────────────────────────────────────
+//  AUTO MODE
+// ─────────────────────────────────────────
 async function placeAutoCall() {
   if (!groqKey) { alert('Please enter your Groq API key first.'); return; }
   const btn = document.getElementById('place-call');
-  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>Connecting...';
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>Connecting...';
+
   const p = profiles[currentProfile];
   resetTranscript();
   addMsg('system', p.opener);
+
   try {
     const res = await callGroq([
       { role: 'system', content: p.system },
       { role: 'user', content: p.autoPrompt }
-    ], 1200, 0.7);
+    ], 1400, 0.7);
+
     const lines = res.split('\n').filter(l => l.trim());
     for (const line of lines) {
-      if (/^AI:/i.test(line)) addMsg('ai', line.replace(/^AI:/i,'').trim());
-      else if (/^(RESIDENT|MARGARET|JAMES|AISHA|GRACE|MOTHER|MOM|MRS\.):/i.test(line)) addMsg('resident', line.replace(/^[^:]+:/,'').trim());
-      else if (line.trim()) addMsg('system', line.trim());
-      await delay(50);
+      if (/^AI:/i.test(line)) {
+        addMsg('ai', line.replace(/^AI:/i, '').trim());
+      } else if (/^(RESIDENT|MARGARET|JAMES|AISHA|GRACE|MOTHER|MOM|CALLER|MRS\.):/i.test(line)) {
+        addMsg('resident', line.replace(/^[^:]+:/, '').trim());
+      } else if (line.trim()) {
+        addMsg('system', line.trim());
+      }
     }
-    addMsg('system', '✓ Call complete. Summary logged to coordinator dashboard.');
-  } catch(e) { addMsg('system', '⚠️ Error: ' + e.message); }
-  btn.disabled = false; btn.innerHTML = '📞 Place Call';
+
+    addMsg('system', '✓ Call complete — extracting card data...');
+    await extractAndUpdateCard();
+    addMsg('system', '📋 Responder card updated from call.');
+  } catch (e) {
+    addMsg('system', '⚠️ Error: ' + e.message);
+  }
+
+  btn.disabled = false;
+  btn.innerHTML = '📞 Place Call';
 }
 
-// ── INTERACTIVE MODE ──
+// ─────────────────────────────────────────
+//  INTERACTIVE MODE
+// ─────────────────────────────────────────
 async function startInteractive() {
   if (!groqKey) { alert('Please enter your Groq API key first.'); return; }
   resetTranscript();
   history = [];
   callLive = true;
+
   const p = profiles[currentProfile];
   const btn = document.getElementById('start-call-btn');
-  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>Connecting...';
-  addMsg('system', p.opener);
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>Connecting...';
 
-  // AI opens the call
-  await getAIReply('The call just connected. Greet the resident and start the welfare check. 2-3 sentences only.');
+  addMsg('system', p.opener);
+  await getAIReply('The call just connected. Greet and start the welfare check. 2-3 sentences only.');
 
   btn.style.display = 'none';
   document.getElementById('input-row').style.display = 'flex';
   document.getElementById('role-hint').style.display = 'block';
   document.getElementById('role-label').textContent = p.label;
-  document.getElementById('clear-interactive-btn').style.display = 'inline-block';
+  document.getElementById('clear-btn').style.display = 'inline-block';
   document.getElementById('user-input').focus();
 }
 
@@ -284,23 +749,29 @@ async function getAIReply(userContent) {
   const indicator = document.createElement('div');
   indicator.className = 'msg ai';
   indicator.innerHTML = '<div class="who">AI DISPATCHER</div><span class="typing-indicator">typing...</span>';
-  t.appendChild(indicator); t.scrollTop = t.scrollHeight;
+  t.appendChild(indicator);
+  t.scrollTop = t.scrollHeight;
 
   const sb = document.getElementById('send-btn');
   if (sb) sb.disabled = true;
 
   try {
     const reply = await callGroq([
-      { role: 'system', content: p.system + '\nReply ONLY as the dispatcher. No "AI:" label. 2-3 sentences max.' },
+      { role: 'system', content: p.system + '\nReply ONLY as the dispatcher. No "AI:" prefix. 2-3 sentences max.' },
       ...history
-    ], 300, 0.75);
+    ], 320, 0.75);
+
     history.push({ role: 'assistant', content: reply });
     indicator.remove();
     addMsg('ai', reply);
-  } catch(e) {
+
+    // Extract and update card after each AI turn
+    await extractAndUpdateCard();
+  } catch (e) {
     indicator.remove();
     addMsg('system', '⚠️ Error: ' + e.message);
   }
+
   if (sb) sb.disabled = false;
   const ui = document.getElementById('user-input');
   if (ui) ui.focus();
@@ -319,20 +790,31 @@ function handleKey(e) {
   if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendUserMsg(); }
 }
 
+// ─────────────────────────────────────────
+//  GROQ API
+// ─────────────────────────────────────────
 async function callGroq(messages, maxTokens, temp) {
   const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + groqKey },
-    body: JSON.stringify({ model: 'llama-3.1-8b-instant', messages, max_tokens: maxTokens, temperature: temp })
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer ' + groqKey
+    },
+    body: JSON.stringify({
+      model: 'llama-3.1-8b-instant',
+      messages,
+      max_tokens: maxTokens,
+      temperature: temp
+    })
   });
   const data = await res.json();
   if (data.error) throw new Error(data.error.message);
   return data.choices[0].message.content.trim();
 }
 
-function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
-
-// init
+// ─────────────────────────────────────────
+//  INIT
+// ─────────────────────────────────────────
 setMode('auto');
 </script>
 </body>
