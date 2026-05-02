@@ -679,7 +679,23 @@ Return ONLY a valid JSON object — no markdown, no explanation:
 //  PERSIST PERSON TO LOCALSTORAGE
 // ─────────────────────────────────────────
 function savePersonToStorage(card) {
-  if (!card || !card.name) return;
+  if (!card) return;
+
+  // If name wasn't captured in the call, fall back to profile name or a timestamped placeholder
+  if (!card.name) {
+    const preset = profiles[currentProfile].presetCard;
+    if (preset && preset.name) {
+      card.name = preset.name;  // known profile — use registry name
+    } else {
+      // Unknown caller who never gave their name — create a unique placeholder
+      card.name = 'Unknown Caller — ' + new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' });
+      if (!card.alert_tags) card.alert_tags = [];
+      card.alert_tags.unshift('⚠ Name not provided during call — verify identity');
+      card.priority = card.priority || 'HIGH';
+      card.priority_reason = card.priority_reason || 'Caller did not provide name — follow up required';
+    }
+  }
+
   try {
     const stored = JSON.parse(localStorage.getItem('dbridge_people') || '[]');
     const idx = stored.findIndex(p => p.name && p.name.toLowerCase() === card.name.toLowerCase());

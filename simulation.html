@@ -315,42 +315,138 @@ const CITIES = {
   'New York City': { lat: 40.7128, lon: -74.0060,  zoom: 12 }
 };
 
-// Houston-specific vulnerable residents
-const HOUSTON_RESIDENTS = [
-  { name:'Margaret Thompson, 74', latOff: 0.009, lonOff:-0.013, priority:'CRITICAL',
-    priority_reason:'Oxygen dependent — power outage imminent',
-    medical_tags:['Oxygen dependent','Portable concentrator','Walker','Lisinopril','Metformin'],
-    alert_tags:['Power outage — ~4h oxygen remaining','Lives alone'],
-    medical_summary:'Oxygen dependent, ~4h concentrator battery. Uses walker. Lisinopril 10mg, metformin daily.',
-    communication_guide:'Hard of hearing (hearing aid). Slow speech. Easily anxious — calm, short sentences.',
-    immediate_actions:['Confirm oxygen hours remaining','Assess evacuation willingness','Arrange pet-friendly transport (has dog Buddy)'],
-    do_not:['Rush her','Suggest leaving her dog','Use complex medical jargon'],
-    resources_needed:'Accessible transport, backup oxygen, pet-friendly shelter',
-    contact:'Daughter Sarah Thompson — 713-555-0142',
-    time_sensitive:'Oxygen ~4h remaining. Power outage ongoing.' },
-  { name:'James Robinson, 58', latOff:-0.007, lonOff: 0.010, priority:'CRITICAL',
-    priority_reason:'Ventilator dependent, caregiver absent, battery ~6h',
-    medical_tags:['Quadriplegic (C4)','Ventilator dependent','Suction every 2h','Baclofen','Lisinopril','Warfarin'],
-    alert_tags:['Ventilator battery ~6h','Caregiver absent'],
-    medical_summary:'C4 quadriplegic, ventilator dependent ~6h battery. Suction every 2h. Baclofen, lisinopril, warfarin.',
-    communication_guide:'Speaks clearly. Cognitively intact. Prefers direct, medical-level communication.',
-    immediate_actions:['Dispatch medical team immediately','Confirm ventilator battery hours','Arrange 2-person lift + accessible transport'],
-    do_not:['Send non-medical staff alone','Delay — ventilator failure is fatal'],
-    resources_needed:'2-person medical team, wheelchair van, spare ventilator',
-    contact:'Wife Carol — 713-555-0298 | Backup: 713-555-0100',
-    time_sensitive:'Ventilator battery ~6h. Suction every 2h. Warfarin timing critical.' },
-  { name:'Aisha Mensah, 31', latOff: 0.013, lonOff: 0.008, priority:'HIGH',
-    priority_reason:'Non-verbal autism, severe routine disruption',
-    medical_tags:['Autism spectrum (non-verbal)','AAC device','Sensory sensitivity','Risperidone'],
-    alert_tags:['Do NOT address Aisha directly','Sensory overload — distressed'],
-    medical_summary:'Non-verbal autism, AAC device. Extreme sensory sensitivities. Daily risperidone.',
-    communication_guide:'ALWAYS address mother Grace. Keep quiet and calm. No sudden movements.',
-    immediate_actions:['Contact mother Grace first','Ensure calm quiet approach','Allow comfort items'],
-    do_not:['Speak to Aisha directly','Loud sounds or sudden moves','Restrain'],
-    resources_needed:'Autism-friendly shelter, family transport',
-    contact:'Mother Grace — 713-555-0377 | Father Emmanuel — 713-555-0388',
-    time_sensitive:'Routine disrupted. Sensory overload. Low-stimulation shelter required.' }
-];
+// ── Vulnerable residents per city (10 total, varied priorities & flag thresholds)
+const CITY_RESIDENTS = {
+  'Houston': [
+    { name:'Margaret Thompson, 74', latOff: 0.009, lonOff:-0.013, flagThreshold:0.40, priority:'CRITICAL',
+      priority_reason:'Oxygen dependent — power outage imminent',
+      medical_tags:['Oxygen dependent','Portable concentrator','Walker','Lisinopril','Metformin'],
+      alert_tags:['Power outage — ~4h oxygen remaining','Lives alone'],
+      medical_summary:'Oxygen dependent, ~4h concentrator battery. Uses walker. Lisinopril 10mg, metformin daily.',
+      communication_guide:'Hard of hearing (hearing aid). Slow speech. Easily anxious — calm, short sentences.',
+      immediate_actions:['Confirm oxygen hours remaining','Assess evacuation willingness','Arrange pet-friendly transport (has dog Buddy)'],
+      do_not:['Rush her','Suggest leaving her dog','Use complex medical jargon'],
+      resources_needed:'Accessible transport, backup oxygen, pet-friendly shelter',
+      contact:'Daughter Sarah Thompson — 713-555-0142',
+      time_sensitive:'Oxygen ~4h remaining. Power outage ongoing.' },
+    { name:'James Robinson, 58', latOff:-0.007, lonOff: 0.010, flagThreshold:0.40, priority:'CRITICAL',
+      priority_reason:'Ventilator dependent, caregiver absent, battery ~6h',
+      medical_tags:['Quadriplegic (C4)','Ventilator dependent','Suction every 2h','Baclofen','Lisinopril','Warfarin'],
+      alert_tags:['Ventilator battery ~6h','Caregiver absent'],
+      medical_summary:'C4 quadriplegic, ventilator dependent ~6h battery. Suction every 2h. Baclofen, lisinopril, warfarin.',
+      communication_guide:'Speaks clearly. Cognitively intact. Prefers direct, medical-level communication.',
+      immediate_actions:['Dispatch medical team immediately','Confirm ventilator battery hours','Arrange 2-person lift + accessible transport'],
+      do_not:['Send non-medical staff alone','Delay — ventilator failure is fatal'],
+      resources_needed:'2-person medical team, wheelchair van, spare ventilator',
+      contact:'Wife Carol — 713-555-0298 | Backup: 713-555-0100',
+      time_sensitive:'Ventilator battery ~6h. Suction every 2h. Warfarin timing critical.' },
+    { name:'Aisha Mensah, 31', latOff: 0.013, lonOff: 0.008, flagThreshold:0.50, priority:'HIGH',
+      priority_reason:'Non-verbal autism, severe routine disruption',
+      medical_tags:['Autism spectrum (non-verbal)','AAC device','Sensory sensitivity','Risperidone'],
+      alert_tags:['Do NOT address Aisha directly','Sensory overload — distressed'],
+      medical_summary:'Non-verbal autism, AAC device. Extreme sensory sensitivities. Daily risperidone.',
+      communication_guide:'ALWAYS address mother Grace. Keep quiet and calm. No sudden movements.',
+      immediate_actions:['Contact mother Grace first','Ensure calm quiet approach','Allow comfort items'],
+      do_not:['Speak to Aisha directly','Loud sounds or sudden moves','Restrain'],
+      resources_needed:'Autism-friendly shelter, family transport',
+      contact:'Mother Grace — 713-555-0377 | Father Emmanuel — 713-555-0388',
+      time_sensitive:'Routine disrupted. Sensory overload. Low-stimulation shelter required.' },
+    { name:'Eloise Carter, 81', latOff:-0.015, lonOff:-0.008, flagThreshold:0.55, priority:'HIGH',
+      priority_reason:'Severe dementia, lives alone, cannot self-evacuate',
+      medical_tags:['Dementia (severe)','Incontinence','Fall risk','Donepezil','Amlodipine'],
+      alert_tags:['Cannot follow instructions unaided','Wandering risk'],
+      medical_summary:'Severe dementia, significant fall risk and wandering behaviour. Donepezil 10mg, amlodipine daily.',
+      communication_guide:'Very short simple sentences. Use her first name. Do not ask questions with multiple steps.',
+      immediate_actions:['Do not leave alone at any point','Contact son Robert immediately','Bring familiar item (photo) to reduce agitation'],
+      do_not:['Leave unsupervised','Use complex instructions','Raise voice'],
+      resources_needed:'Supervised transport, memory-care shelter placement',
+      contact:'Son Robert Carter — 713-555-0561',
+      time_sensitive:'Cannot self-evacuate. Wandering risk increases after dark.' },
+    { name:'Darnell Washington, 44', latOff: 0.006, lonOff: 0.019, flagThreshold:0.45, priority:'HIGH',
+      priority_reason:'Insulin-dependent diabetic, refrigerated insulin at risk',
+      medical_tags:['Type 1 Diabetes','Insulin dependent','CGM device','Metformin'],
+      alert_tags:['Insulin refrigeration failing','CGM battery low'],
+      medical_summary:'Type 1 diabetic, insulin must stay refrigerated. CGM monitors blood glucose continuously. Power loss is life-threatening.',
+      communication_guide:'Calm and direct. He is medically literate — speak plainly about the insulin situation.',
+      immediate_actions:['Confirm insulin supply and remaining cold time','Transport insulin in cooler immediately','Locate nearest medical cooling facility'],
+      do_not:['Delay insulin retrieval','Assume he can manage without power'],
+      resources_needed:'Medical cooler, insulin-safe transport, generator-powered shelter',
+      contact:'Partner Leon — 713-555-0812',
+      time_sensitive:'Insulin viable ~2h without refrigeration at current temperature.' }
+  ],
+  'Minneapolis': [
+    { name:'Ruth Kowalski, 77', latOff: 0.011, lonOff:-0.009, flagThreshold:0.45, priority:'CRITICAL',
+      priority_reason:'Home dialysis patient — power loss halts treatment',
+      medical_tags:['End-stage renal disease','Home dialysis','Wheelchair','Lisinopril','Furosemide'],
+      alert_tags:['Dialysis machine requires power','Missed session is life-threatening'],
+      medical_summary:'ESRD patient on home haemodialysis 3x/week. Wheelchair bound. Missed dialysis beyond 48h is fatal.',
+      communication_guide:'Speak slowly, she has some hearing loss. Reassure about dialysis continuity first — that is her primary concern.',
+      immediate_actions:['Confirm last dialysis date and next scheduled session','Transport immediately to hospital dialysis unit','Bring all medications'],
+      do_not:['Delay transport','Assume she can skip a session'],
+      resources_needed:'Wheelchair-accessible ambulance, hospital dialysis bed',
+      contact:'Daughter Marta — 612-555-0234',
+      time_sensitive:'Next dialysis due within 24h. Power outage ongoing.' },
+    { name:'Omar Hassan, 35', latOff:-0.009, lonOff: 0.014, flagThreshold:0.50, priority:'HIGH',
+      priority_reason:'PTSD and anxiety disorder — disaster conditions trigger crisis episodes',
+      medical_tags:['PTSD','Anxiety disorder','Sertraline','Lorazepam PRN'],
+      alert_tags:['High risk of acute anxiety episode','Do not approach in uniform without prior warning'],
+      medical_summary:'PTSD and generalised anxiety. Sertraline daily, lorazepam as needed. Loud noise and uniformed responders are known triggers.',
+      communication_guide:'Civilian clothing if possible. Introduce yourself calmly from a distance. Do not rush or physically guide him without consent.',
+      immediate_actions:['Call ahead — do not arrive unannounced','Allow him to lead the pace of evacuation','Confirm medication supply'],
+      do_not:['Wear full tactical gear','Force physical contact','Raise voice or give rapid commands'],
+      resources_needed:'Quiet transport, mental health liaison, low-stimulation shelter',
+      contact:'Sister Fadumo — 612-555-0489',
+      time_sensitive:'Medication supply limited to 3 days. Isolation worsens PTSD.' }
+  ],
+  'Los Angeles': [
+    { name:'Carmen Reyes, 69', latOff: 0.008, lonOff:-0.011, flagThreshold:0.45, priority:'CRITICAL',
+      priority_reason:'Pacemaker dependent — power loss affects device monitoring equipment',
+      medical_tags:['Pacemaker (rate-responsive)','Heart failure','Warfarin','Digoxin','Furosemide'],
+      alert_tags:['Pacemaker clinic monitor offline','INR check overdue'],
+      medical_summary:'Rate-responsive pacemaker, heart failure managed with digoxin and furosemide. Warfarin requires regular INR monitoring.',
+      communication_guide:'Spanish preferred — limited English. Speak slowly, use simple words. Daughter Rosa can translate.',
+      immediate_actions:['Contact daughter Rosa first for translation','Confirm pacemaker remote monitor status','Transport to cardiac-capable facility'],
+      do_not:['Use MRI facility','Assume English comprehension','Delay cardiac assessment'],
+      resources_needed:'Cardiac-capable ambulance, Spanish-speaking liaison',
+      contact:'Daughter Rosa — 323-555-0771',
+      time_sensitive:'INR unmonitored for 5 days. Pacemaker clinic offline.' },
+    { name:'Terrence Boyd, 52', latOff:-0.012, lonOff: 0.007, flagThreshold:0.55, priority:'HIGH',
+      priority_reason:'Bilateral amputee, power wheelchair — battery depleting',
+      medical_tags:['Bilateral below-knee amputee','Power wheelchair','Phantom pain','Gabapentin','Oxycodone'],
+      alert_tags:['Wheelchair battery ~8h','Cannot self-propel manual chair'],
+      medical_summary:'Bilateral BKA. Power wheelchair only — cannot use manual chair independently. Gabapentin and oxycodone for phantom pain.',
+      communication_guide:'Direct and practical. He is independent-minded — offer options, do not assume he needs full assistance.',
+      immediate_actions:['Confirm wheelchair battery hours remaining','Arrange accessible transport with ramp','Bring pain medication supply'],
+      do_not:['Bring a manual chair without assistance','Condescend or over-assist'],
+      resources_needed:'Wheelchair-accessible vehicle, power outlet at shelter for charging',
+      contact:'Friend Marcus — 323-555-0902',
+      time_sensitive:'Power wheelchair battery ~8h. No manual mobility without it.' }
+  ],
+  'New York City': [
+    { name:'Hyun-Ja Park, 83', latOff: 0.007, lonOff:-0.008, flagThreshold:0.40, priority:'CRITICAL',
+      priority_reason:'5th floor walk-up, severe COPD, oxygen concentrator dependent',
+      medical_tags:['COPD (severe)','Oxygen concentrator','No elevator','Prednisolone','Salbutamol inhaler'],
+      alert_tags:['5th floor — no elevator access','Oxygen concentrator requires power'],
+      medical_summary:'Severe COPD on continuous supplemental oxygen. Lives on 5th floor with no elevator. Prednisolone and salbutamol daily.',
+      communication_guide:'Korean preferred, limited English. Speak gently — breathlessness makes long sentences difficult for her.',
+      immediate_actions:['Arrange stair-carry team (4 persons minimum)','Bring portable oxygen for descent','Contact son David for Korean translation'],
+      do_not:['Attempt evacuation without portable O2','Send fewer than 4 people for stair carry','Rush the descent'],
+      resources_needed:'4-person stair evacuation team, portable O2 cylinder, Korean interpreter',
+      contact:'Son David Park — 212-555-0348',
+      time_sensitive:'Oxygen concentrator on battery backup — estimated 3h remaining.' },
+    { name:'Blessing Okafor, 28', latOff:-0.011, lonOff: 0.013, flagThreshold:0.60, priority:'STANDARD',
+      priority_reason:'Deaf, isolated — standard emergency alerts not reaching her',
+      medical_tags:['Profoundly deaf','No cochlear implant','Relies on visual/vibration alerts'],
+      alert_tags:['Cannot hear sirens or verbal warnings','SMS alerts only — phone may be low battery'],
+      medical_summary:'Profoundly deaf since birth. No cochlear implant. All communication must be written or via BSL/ASL. No medical dependencies but completely isolated from audio emergency systems.',
+      communication_guide:'Write everything down or use phone text. ASL or BSL if available. Face her directly — she lip-reads partially.',
+      immediate_actions:['Send written notice or text before arrival','Do not knock — flash lights or use doorbell strobe','Confirm she has received all evacuation instructions in writing'],
+      do_not:['Rely on verbal communication','Assume she received audio alerts','Leave without written confirmation she understands the plan'],
+      resources_needed:'Written evacuation briefing, ASL interpreter at shelter',
+      contact:'Roommate Chisom — 212-555-0617',
+      time_sensitive:'May be completely unaware of disaster status if phone battery dead.' }
+  ]
+};
 
 // ══════════════════════════════════════════
 //  MATHS
@@ -676,45 +772,29 @@ function checkFlagging(zones) {
   document.getElementById('s-crit').textContent = critZones.length;
   document.getElementById('st-critical').textContent = critZones.length;
 
-  if (currentCity==='Houston') {
-    HOUSTON_RESIDENTS.forEach(res => {
-      if(flaggedNames.has(res.name)) return;
-      const rLat = CITIES['Houston'].lat+res.latOff;
-      const rLon = CITIES['Houston'].lon+res.lonOff;
-      let minD=Infinity, nearP=1;
-      zones.forEach(z=>{const d=Math.sqrt((z.lat-rLat)**2+(z.lon-rLon)**2);if(d<minD){minD=d;nearP=computePower(z);}});
-      if(nearP<0.40){
-        flaggedNames.add(res.name); flaggedCount++;
-        savePersonFromModel(res);
-        logEv('crit','⚠ FLAGGED: '+res.name+' — zone power '+Math.round(nearP*100)+'%');
-        addResidentMarker(rLat,rLon,res);
-        updateFlagBanner();
-      }
+  const cityResidents = CITY_RESIDENTS[currentCity] || [];
+  const cityCoords = CITIES[currentCity];
+  cityResidents.forEach(res => {
+    if (flaggedNames.has(res.name)) return;
+    const rLat = cityCoords.lat + res.latOff;
+    const rLon = cityCoords.lon + res.lonOff;
+    let minD = Infinity, nearP = 1;
+    zones.forEach(z => {
+      const d = Math.sqrt((z.lat-rLat)**2 + (z.lon-rLon)**2);
+      if (d < minD) { minD = d; nearP = computePower(z); }
     });
-  } else if(critZones.length>0 && flaggedCount===0) {
-    const highEld = critZones.filter(z=>z.elderly>0.22);
-    if(highEld.length>0){
-      const card={
-        name:'Vulnerable Cluster — '+currentCity, priority:'CRITICAL',
-        priority_reason:'Model flagged '+highEld.length+' critical zones with high elderly ratio',
-        medical_tags:['Elderly cluster','Power dependent','Medical equipment'],
-        alert_tags:['Power grid below 40%',''+highEld.length+' zones critical'],
-        medical_summary:''+highEld.length+' zones with elderly residents where power has dropped below safe threshold in '+currentCity+'.',
-        communication_guide:'Zone-wide outreach. Use accessible channels.',
-        immediate_actions:['Deploy welfare calls to flagged zones','Check medical equipment status','Arrange accessible shelter transport'],
-        do_not:['Ignore sub-40% power zones'],
-        resources_needed:'Medical teams, accessible transport, backup power',
-        contact:'Emergency Coordinator: 911',
-        time_sensitive:'Power degradation ongoing — act before systems reach 0'
-      };
-      flaggedCount++; flaggedNames.add(card.name);
-      savePersonFromModel(card);
-      logEv('crit','⚠ '+highEld.length+' critical vulnerable zones flagged in '+currentCity);
+    if (nearP < res.flagThreshold) {
+      flaggedNames.add(res.name); flaggedCount++;
+      savePersonFromModel(res);
+      const lvl = res.priority==='CRITICAL'?'crit':res.priority==='HIGH'?'warn':'info';
+      logEv(lvl,'⚠ FLAGGED: '+res.name+' — zone power '+Math.round(nearP*100)+'% (threshold '+Math.round(res.flagThreshold*100)+'%)');
+      addResidentMarker(rLat, rLon, res);
       updateFlagBanner();
     }
-  }
+  });
   document.getElementById('st-flagged').textContent = flaggedCount;
 }
+
 
 function updateFlagBanner() {
   document.getElementById('fb-title').textContent = flaggedCount+' person'+(flaggedCount!==1?'s':'')+' flagged by model';

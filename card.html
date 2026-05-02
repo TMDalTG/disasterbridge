@@ -146,6 +146,7 @@
     </div>
 
     <button class="add-manual-btn" onclick="newPerson()">+ Add Person Manually</button>
+    <button class="add-manual-btn clear-all-btn" onclick="clearAll()" style="margin-top:6px;border-color:#f8514955;color:#8b949e;">🗑 Clear All</button>
   </div>
 
   <!-- ═══ RIGHT: DETAIL ═══ -->
@@ -579,6 +580,19 @@ function switchTab(name) {
     document.getElementById('tab-' + t).classList.toggle('active', t === name);
     document.getElementById('panel-' + t).classList.toggle('active', t === name);
   });
+}
+
+// ─────────────────────────────────────────
+//  CLEAR ALL
+// ─────────────────────────────────────────
+function clearAll() {
+  if (!confirm('Remove all people from the list? This cannot be undone.')) return;
+  people = [];
+  savePeople();
+  selectedId = null;
+  document.getElementById('card-placeholder').style.display = 'block';
+  document.getElementById('card-display').style.display = 'none';
+  renderPeopleList();
 }
 
 // ─────────────────────────────────────────
