@@ -13,26 +13,63 @@
   nav h2 { font-size: 1rem; color: #e6edf3; margin-left: auto; margin-right: auto; }
   .container { max-width: 1100px; margin: 0 auto; padding: 30px 20px; }
   h1 { font-size: 1.6rem; margin-bottom: 6px; }
-  .subtitle { color: #8b949e; font-size: 0.9rem; margin-bottom: 24px; }
-  .legend { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 20px; }
+  .subtitle { color: #8b949e; font-size: 0.9rem; margin-bottom: 16px; }
+
+  /* SIMULATION CONTROLS */
+  .sim-controls { display: flex; align-items: center; gap: 14px; margin-bottom: 20px; flex-wrap: wrap; }
+  #run-btn { background: #238636; color: #fff; border: none; border-radius: 8px; padding: 11px 22px; font-size: 0.9rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 8px; }
+  #run-btn:hover { background: #2ea043; }
+  #run-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  #reset-btn { background: transparent; border: 1px solid #30363d; color: #8b949e; border-radius: 8px; padding: 10px 16px; font-size: 0.85rem; cursor: pointer; }
+  #reset-btn:hover { border-color: #58a6ff; color: #58a6ff; }
+  #sim-status { font-size: 0.82rem; color: #8b949e; }
+  #sim-status.running { color: #3fb950; }
+  #sim-progress { flex: 1; min-width: 160px; height: 4px; background: #21262d; border-radius: 2px; overflow: hidden; }
+  #sim-bar { height: 100%; width: 0%; background: #238636; transition: width 0.4s; border-radius: 2px; }
+
+  /* PHASE INDICATOR */
+  .phase-row { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
+  .phase { padding: 5px 14px; border-radius: 20px; font-size: 0.75rem; border: 1px solid #30363d; color: #484f58; transition: all 0.3s; }
+  .phase.active { border-color: #3fb950; color: #3fb950; background: #23863620; font-weight: 700; }
+  .phase.done { border-color: #484f58; color: #484f58; background: #21262d; }
+
+  .legend { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 16px; }
   .legend-item { display: flex; align-items: center; gap: 6px; font-size: 0.82rem; color: #c9d1d9; }
   .dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+
   .map { background: #1c2128; border: 1px solid #21262d; border-radius: 12px; padding: 20px; position: relative; overflow: hidden; min-height: 440px; }
-  /* Stylised grid streets */
   .street-h { position: absolute; height: 2px; background: #21262d; left: 0; right: 0; }
   .street-v { position: absolute; width: 2px; background: #21262d; top: 0; bottom: 0; }
   .zone-label { position: absolute; font-size: 0.68rem; color: #484f58; text-transform: uppercase; letter-spacing: 1px; }
-  .pin { position: absolute; width: 18px; height: 18px; border-radius: 50%; border: 2px solid #0d1117; cursor: pointer; transition: transform 0.15s; display: flex; align-items: center; justify-content: center; font-size: 0.55rem; font-weight: 700; color: #fff; }
+
+  .pin { position: absolute; width: 18px; height: 18px; border-radius: 50%; border: 2px solid #0d1117; cursor: pointer; transition: transform 0.15s, opacity 0.4s; display: flex; align-items: center; justify-content: center; font-size: 0.55rem; font-weight: 700; color: #fff; opacity: 0; }
+  .pin.visible { opacity: 1; }
   .pin:hover { transform: scale(1.4); z-index: 10; }
+  .pin.pulse { animation: pulse 1.5s infinite; }
+  @keyframes pulse { 0%,100% { box-shadow: 0 0 0 0 rgba(248,81,73,0.5); } 50% { box-shadow: 0 0 0 8px rgba(248,81,73,0); } }
+
   .tooltip { display: none; position: absolute; background: #161b22; border: 1px solid #21262d; border-radius: 8px; padding: 12px 14px; font-size: 0.82rem; width: 220px; z-index: 20; line-height: 1.6; color: #c9d1d9; pointer-events: none; }
   .pin:hover .tooltip { display: block; top: 24px; left: 50%; transform: translateX(-50%); }
-  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 14px; margin-top: 24px; }
+
+  /* EVENT LOG */
+  .event-log { background: #0d1117; border: 1px solid #21262d; border-radius: 8px; padding: 12px 16px; margin-top: 16px; max-height: 140px; overflow-y: auto; font-size: 0.8rem; font-family: monospace; }
+  .event-log .ev { color: #8b949e; margin-bottom: 4px; }
+  .event-log .ev.crit { color: #f85149; }
+  .event-log .ev.ok { color: #3fb950; }
+  .event-log .ev.info { color: #58a6ff; }
+
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 14px; margin-top: 20px; }
   .stat { background: #161b22; border: 1px solid #21262d; border-radius: 10px; padding: 16px; }
-  .stat .val { font-size: 1.8rem; font-weight: 700; color: #58a6ff; }
+  .stat .val { font-size: 1.8rem; font-weight: 700; color: #58a6ff; transition: color 0.3s; }
+  .stat .val.alert { color: #f85149; }
   .stat .lbl { font-size: 0.78rem; color: #8b949e; margin-top: 4px; }
-  .ticker { background: #161b22; border: 1px solid #f85149; border-radius: 8px; padding: 12px 16px; margin-top: 20px; font-size: 0.85rem; color: #f85149; }
-  footer-nav { display: flex; gap: 12px; margin-top: 30px; }
-  .btn { display: inline-block; padding: 10px 20px; border-radius: 8px; font-size: 0.88rem; text-decoration: none; background: #1f6feb; color: #fff; margin-top: 24px; margin-right: 10px; }
+
+  .ticker { background: #161b22; border: 1px solid #f85149; border-radius: 8px; padding: 12px 16px; margin-top: 16px; font-size: 0.85rem; color: #f85149; opacity: 0; transition: opacity 0.5s; }
+  .ticker.visible { opacity: 1; }
+
+  .btn-link { display: inline-block; padding: 10px 20px; border-radius: 8px; font-size: 0.88rem; text-decoration: none; background: #1f6feb; color: #fff; margin-top: 24px; margin-right: 10px; }
+  .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid #ffffff44; border-top-color: #fff; border-radius: 50%; animation: spin 0.7s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
 </style>
 </head>
 <body>
@@ -46,87 +83,273 @@
   <h1>Disability Vulnerability Map</h1>
   <p class="subtitle">Phase 1 simulation · Pre-landfall +6h · Harris County, TX · Hurricane Beryl scenario</p>
 
+  <!-- SIMULATION CONTROLS -->
+  <div class="sim-controls">
+    <button id="run-btn" onclick="runSimulation()">▶ Run Simulation</button>
+    <button id="reset-btn" onclick="resetSimulation()">↺ Reset</button>
+    <div id="sim-progress"><div id="sim-bar"></div></div>
+    <span id="sim-status">Ready — click Run to begin</span>
+  </div>
+
+  <!-- PHASE INDICATORS -->
+  <div class="phase-row">
+    <div class="phase" id="phase-1">① Scanning residents</div>
+    <div class="phase" id="phase-2">② Flagging critical cases</div>
+    <div class="phase" id="phase-3">③ Dispatching resources</div>
+    <div class="phase" id="phase-4">④ Placing welfare calls</div>
+    <div class="phase" id="phase-5">⑤ Shelters confirmed</div>
+  </div>
+
   <div class="legend">
-    <div class="legend-item"><div class="dot" style="background:#f85149"></div> Critical risk — immediate outreach</div>
-    <div class="legend-item"><div class="dot" style="background:#d29922"></div> High risk — priority monitoring</div>
-    <div class="legend-item"><div class="dot" style="background:#3fb950"></div> Shelter — accessible confirmed</div>
+    <div class="legend-item"><div class="dot" style="background:#f85149"></div> Critical — immediate outreach</div>
+    <div class="legend-item"><div class="dot" style="background:#d29922"></div> High risk — monitoring</div>
+    <div class="legend-item"><div class="dot" style="background:#3fb950"></div> Accessible shelter</div>
     <div class="legend-item"><div class="dot" style="background:#58a6ff"></div> Medical supply depot</div>
-    <div class="legend-item"><div class="dot" style="background:#bc8cff"></div> Transport pickup point</div>
+    <div class="legend-item"><div class="dot" style="background:#bc8cff"></div> Transport pickup</div>
   </div>
 
   <div class="map" id="map">
-    <!-- Streets -->
     <div class="street-h" style="top:25%"></div>
     <div class="street-h" style="top:50%"></div>
     <div class="street-h" style="top:75%"></div>
     <div class="street-v" style="left:25%"></div>
     <div class="street-v" style="left:50%"></div>
     <div class="street-v" style="left:75%"></div>
-
     <div class="zone-label" style="top:6px;left:8px">Kashmere Gardens</div>
     <div class="zone-label" style="top:6px;left:52%">Fifth Ward</div>
     <div class="zone-label" style="top:51%;left:8px">Third Ward</div>
     <div class="zone-label" style="top:51%;left:52%">East Downtown</div>
 
-    <!-- Critical pins -->
-    <div class="pin" style="background:#f85149;top:18%;left:12%">CR
+    <!-- All pins start hidden, revealed by simulation -->
+    <div class="pin pulse" id="pin-margaret" style="background:#f85149;top:18%;left:12%">CR
       <div class="tooltip"><strong>Margaret T., 74</strong><br>Oxygen dependent · Mobility aid<br>⚠️ Power outage risk in 2h<br>📞 Welfare call queued</div>
     </div>
-    <div class="pin" style="background:#f85149;top:38%;left:20%">CR
+    <div class="pin pulse" id="pin-zone3b" style="background:#f85149;top:38%;left:20%">CR
       <div class="tooltip"><strong>Zone 3B — 14 residents</strong><br>Deaf/HoH community block<br>⚠️ No alert reception<br>📢 Visual alert unit dispatched</div>
     </div>
-    <div class="pin" style="background:#f85149;top:62%;left:44%">CR
+    <div class="pin pulse" id="pin-james" style="background:#f85149;top:62%;left:44%">CR
       <div class="tooltip"><strong>James R., 58</strong><br>Quadriplegic · Ventilator<br>⚠️ Caregiver absent<br>🚑 Medical team en route</div>
     </div>
-    <div class="pin" style="background:#f85149;top:15%;left:70%">CR
-      <div class="tooltip"><strong>Aisha M., 31</strong><br>Autism spectrum · Non-verbal<br>Familiar routine disrupted<br>👩‍⚕️ Support worker contacted</div>
+    <div class="pin pulse" id="pin-aisha" style="background:#f85149;top:15%;left:70%">CR
+      <div class="tooltip"><strong>Aisha M., 31</strong><br>Autism spectrum · Non-verbal<br>Routine disrupted<br>👩‍⚕️ Support worker contacted</div>
     </div>
-    <div class="pin" style="background:#f85149;top:78%;left:78%">CR
-      <div class="tooltip"><strong>Flood zone overlap — 9 residents</strong><br>Wheelchair users, ground floor<br>⚠️ Evacuation order issued<br>🚐 Accessible van dispatched</div>
+    <div class="pin pulse" id="pin-flood" style="background:#f85149;top:78%;left:78%">CR
+      <div class="tooltip"><strong>Flood zone — 9 residents</strong><br>Wheelchair users, ground floor<br>⚠️ Evacuation order issued<br>🚐 Accessible van dispatched</div>
     </div>
-
-    <!-- High risk -->
-    <div class="pin" style="background:#d29922;top:28%;left:55%">HI
+    <div class="pin" id="pin-hi1" style="background:#d29922;top:28%;left:55%">HI
       <div class="tooltip"><strong>Senior block — 22 residents</strong><br>Mixed mobility / cognitive<br>📋 Monitoring hourly</div>
     </div>
-    <div class="pin" style="background:#d29922;top:70%;left:18%">HI
+    <div class="pin" id="pin-hi2" style="background:#d29922;top:70%;left:18%">HI
       <div class="tooltip"><strong>Group home — 8 residents</strong><br>Developmental disabilities<br>📋 Staff on standby</div>
     </div>
-    <div class="pin" style="background:#d29922;top:44%;left:80%">HI
+    <div class="pin" id="pin-hi3" style="background:#d29922;top:44%;left:80%">HI
       <div class="tooltip"><strong>Visual impairment cluster</strong><br>Guide dog households<br>📋 Buddy system active</div>
     </div>
-
-    <!-- Shelters -->
-    <div class="pin" style="background:#3fb950;top:48%;left:48%">SH
-      <div class="tooltip"><strong>NRG Arena — Primary Shelter</strong><br>✓ Wheelchair accessible<br>✓ Medical bay on-site<br>✓ ASL interpreter available<br>Capacity: 800 · Current: 243</div>
+    <div class="pin" id="pin-sh1" style="background:#3fb950;top:48%;left:48%">SH
+      <div class="tooltip"><strong>NRG Arena — Primary Shelter</strong><br>✓ Wheelchair accessible<br>✓ Medical bay on-site<br>✓ ASL interpreter<br>Capacity: 800 · Current: 243</div>
     </div>
-    <div class="pin" style="background:#3fb950;top:20%;left:35%">SH
-      <div class="tooltip"><strong>Kashmere MS Shelter</strong><br>✓ Ground floor only<br>⚠️ No generator (yet)<br>Capacity: 200 · Current: 67</div>
+    <div class="pin" id="pin-sh2" style="background:#3fb950;top:20%;left:35%">SH
+      <div class="tooltip"><strong>Kashmere MS Shelter</strong><br>✓ Ground floor only<br>⚠️ No generator yet<br>Capacity: 200 · Current: 67</div>
     </div>
-
-    <!-- Medical depot -->
-    <div class="pin" style="background:#58a6ff;top:55%;left:62%">MD
-      <div class="tooltip"><strong>Medical Supply Depot</strong><br>Oxygen tanks · Medications<br>Portable ventilators<br>📍 2411 Leeland St</div>
+    <div class="pin" id="pin-md" style="background:#58a6ff;top:55%;left:62%">MD
+      <div class="tooltip"><strong>Medical Supply Depot</strong><br>Oxygen · Medications<br>Portable ventilators<br>📍 2411 Leeland St</div>
     </div>
-
-    <!-- Transport -->
-    <div class="pin" style="background:#bc8cff;top:33%;left:72%">TP
-      <div class="tooltip"><strong>Accessible Transport Hub</strong><br>3 wheelchair vans available<br>⏱ Next pickup: 14 min<br>📞 Call: 713-555-0199</div>
+    <div class="pin" id="pin-tp" style="background:#bc8cff;top:33%;left:72%">TP
+      <div class="tooltip"><strong>Accessible Transport Hub</strong><br>3 wheelchair vans available<br>⏱ Next pickup: 14 min<br>📞 713-555-0199</div>
     </div>
   </div>
 
-  <div class="ticker">⚠️ LIVE ALERT: Storm surge forecast upgraded to Cat 2 levels · All Zone A residents with mobility impairments — immediate evacuation recommended · Accessible transport on-call: 713-555-0199</div>
+  <!-- EVENT LOG -->
+  <div class="event-log" id="event-log">
+    <div class="ev">[ Simulation ready — press Run to begin ]</div>
+  </div>
+
+  <div class="ticker" id="ticker">⚠️ LIVE ALERT: Storm surge upgraded to Cat 2 · All Zone A mobility-impaired residents — immediate evacuation recommended · Transport: 713-555-0199</div>
 
   <div class="stats">
-    <div class="stat"><div class="val">312</div><div class="lbl">Residents flagged for outreach</div></div>
-    <div class="stat"><div class="val">47</div><div class="lbl">Critical — immediate action</div></div>
-    <div class="stat"><div class="val">8</div><div class="lbl">Accessible shelters open</div></div>
-    <div class="stat"><div class="val">23</div><div class="lbl">AI welfare calls placed</div></div>
-    <div class="stat"><div class="val">94%</div><div class="lbl">Contact success rate</div></div>
+    <div class="stat"><div class="val" id="stat-flagged">0</div><div class="lbl">Residents flagged</div></div>
+    <div class="stat"><div class="val alert" id="stat-critical">0</div><div class="lbl">Critical — action needed</div></div>
+    <div class="stat"><div class="val" id="stat-shelters">0</div><div class="lbl">Accessible shelters open</div></div>
+    <div class="stat"><div class="val" id="stat-calls">0</div><div class="lbl">AI welfare calls placed</div></div>
+    <div class="stat"><div class="val" id="stat-contact">—</div><div class="lbl">Contact success rate</div></div>
   </div>
 
-  <a class="btn" href="call.html">→ Try Call Simulator</a>
-  <a class="btn" href="card.html" style="background:#238636">→ Generate Responder Card</a>
+  <a class="btn-link" href="call.html">→ Try Call Simulator</a>
+  <a class="btn-link" href="card.html" style="background:#238636">→ Generate Responder Card</a>
 </div>
+
+<script>
+let simRunning = false;
+
+const events = [
+  // Phase 1 — scanning
+  { phase: 1, delay: 400,  type: 'info', msg: 'AI system initialised — scanning Harris County disability registry...' },
+  { phase: 1, delay: 900,  type: 'info', msg: 'Cross-referencing 4,812 registered residents with flood zone map...' },
+  { phase: 1, delay: 1500, type: 'info', msg: '312 residents flagged for priority outreach.', stat: { id: 'stat-flagged', val: 312 }, progress: 15 },
+
+  // Phase 2 — critical flags appear
+  { phase: 2, delay: 2200, type: 'crit', msg: '⚠ CRITICAL: Margaret T., 74 — oxygen dependent, power outage risk in 2h.', pin: 'pin-margaret' },
+  { phase: 2, delay: 2700, type: 'crit', msg: '⚠ CRITICAL: Zone 3B — 14 Deaf/HoH residents, no alert reception.', pin: 'pin-zone3b' },
+  { phase: 2, delay: 3100, type: 'crit', msg: '⚠ CRITICAL: James R., 58 — ventilator dependent, caregiver absent.', pin: 'pin-james' },
+  { phase: 2, delay: 3500, type: 'crit', msg: '⚠ CRITICAL: Aisha M., 31 — autism spectrum, routine severely disrupted.', pin: 'pin-aisha' },
+  { phase: 2, delay: 3900, type: 'crit', msg: '⚠ CRITICAL: Flood zone overlap — 9 wheelchair users, ground floor.', pin: 'pin-flood', stat: { id: 'stat-critical', val: 47 }, progress: 35 },
+
+  // Phase 2b — high risk
+  { phase: 2, delay: 4400, type: 'info', msg: 'Flagging 22 senior block residents — mixed mobility and cognitive needs.', pin: 'pin-hi1' },
+  { phase: 2, delay: 4700, type: 'info', msg: 'Flagging group home — 8 residents with developmental disabilities.', pin: 'pin-hi2' },
+  { phase: 2, delay: 5000, type: 'info', msg: 'Flagging visual impairment cluster — guide dog households.', pin: 'pin-hi3' },
+
+  // Phase 3 — dispatch resources
+  { phase: 3, delay: 5600, type: 'ok',   msg: '✓ Medical supply depot confirmed active — 2411 Leeland St.', pin: 'pin-md', progress: 50 },
+  { phase: 3, delay: 6000, type: 'ok',   msg: '✓ Accessible transport hub activated — 3 wheelchair vans on standby.', pin: 'pin-tp' },
+  { phase: 3, delay: 6400, type: 'crit', msg: '🚑 Medical team dispatched to James R. — ETA 18 minutes.' },
+  { phase: 3, delay: 6800, type: 'info', msg: '🚐 Accessible van dispatched to flood zone — 9 residents.' },
+  { phase: 3, delay: 7200, type: 'info', msg: '📢 Visual alert units deployed to Zone 3B (Deaf/HoH block).' },
+
+  // Phase 4 — welfare calls
+  { phase: 4, delay: 7800, type: 'ok',   msg: '📞 AI welfare call placed to Margaret T. — connected, oxygen 4h remaining.', stat: { id: 'stat-calls', val: 1 }, progress: 65 },
+  { phase: 4, delay: 8300, type: 'ok',   msg: '📞 AI welfare call placed to Aisha\'s family — shelter transport requested.', stat: { id: 'stat-calls', val: 8 } },
+  { phase: 4, delay: 8700, type: 'ok',   msg: '📞 Welfare calls completed for 23 priority residents.', stat: { id: 'stat-calls', val: 23 }, stat2: { id: 'stat-contact', val: '94%' }, progress: 80 },
+
+  // Phase 5 — shelters
+  { phase: 5, delay: 9300, type: 'ok',   msg: '✓ NRG Arena shelter confirmed — wheelchair accessible, ASL interpreter on-site.', pin: 'pin-sh1', stat: { id: 'stat-shelters', val: 1 } },
+  { phase: 5, delay: 9700, type: 'ok',   msg: '✓ Kashmere MS shelter open — generator being installed.', pin: 'pin-sh2', stat: { id: 'stat-shelters', val: 8 }, progress: 95 },
+  { phase: 5, delay: 10300, type: 'ok',  msg: '✓ Simulation complete. All critical residents contacted. Resources deployed.', progress: 100 }
+];
+
+function logEvent(type, msg) {
+  const log = document.getElementById('event-log');
+  const d = document.createElement('div');
+  d.className = 'ev ' + type;
+  const time = new Date().toLocaleTimeString('en-US', { hour12: false });
+  d.textContent = '[' + time + '] ' + msg;
+  log.appendChild(d);
+  log.scrollTop = log.scrollHeight;
+}
+
+function showPin(id) {
+  const el = document.getElementById(id);
+  if (el) el.classList.add('visible');
+}
+
+function setStat(id, val) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = val;
+}
+
+function setPhase(num) {
+  for (let i = 1; i <= 5; i++) {
+    const el = document.getElementById('phase-' + i);
+    if (i < num) el.className = 'phase done';
+    else if (i === num) el.className = 'phase active';
+    else el.className = 'phase';
+  }
+}
+
+function setProgress(pct) {
+  document.getElementById('sim-bar').style.width = pct + '%';
+}
+
+async function runSimulation() {
+  if (simRunning) return;
+  simRunning = true;
+  resetSimulation(false);
+
+  const btn = document.getElementById('run-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Running...';
+  document.getElementById('sim-status').textContent = 'Simulation running...';
+  document.getElementById('sim-status').className = 'running';
+
+  let currentPhase = 0;
+
+  for (const ev of events) {
+    await delay(ev.delay - (events[events.indexOf(ev) > 0 ? events.indexOf(ev) - 1 : 0]?.delay || 0));
+
+    if (ev.phase !== currentPhase) {
+      currentPhase = ev.phase;
+      setPhase(currentPhase);
+    }
+    logEvent(ev.type, ev.msg);
+    if (ev.pin) showPin(ev.pin);
+    if (ev.stat) setStat(ev.stat.id, ev.stat.val);
+    if (ev.stat2) setStat(ev.stat2.id, ev.stat2.val);
+    if (ev.progress) setProgress(ev.progress);
+  }
+
+  // Show ticker
+  document.getElementById('ticker').classList.add('visible');
+  document.getElementById('sim-status').textContent = '✓ Simulation complete';
+  document.getElementById('sim-status').className = '';
+
+  btn.disabled = false;
+  btn.innerHTML = '▶ Run Again';
+  simRunning = false;
+}
+
+function resetSimulation(clearLog = true) {
+  simRunning = false;
+  document.querySelectorAll('.pin').forEach(p => p.classList.remove('visible'));
+  document.getElementById('ticker').classList.remove('visible');
+  setProgress(0);
+  ['stat-flagged','stat-critical','stat-shelters','stat-calls'].forEach(id => setStat(id, '0'));
+  setStat('stat-contact', '—');
+  for (let i = 1; i <= 5; i++) document.getElementById('phase-' + i).className = 'phase';
+  if (clearLog) {
+    document.getElementById('event-log').innerHTML = '<div class="ev">[ Simulation ready — press Run to begin ]</div>';
+  }
+  document.getElementById('sim-status').textContent = 'Ready — click Run to begin';
+  document.getElementById('sim-status').className = '';
+  const btn = document.getElementById('run-btn');
+  btn.disabled = false;
+  btn.innerHTML = '▶ Run Simulation';
+}
+
+// Staggered delay helper (absolute timing)
+let simStart = 0;
+async function delay(ms) {
+  return new Promise(r => setTimeout(r, ms));
+}
+
+// Override with absolute timing
+async function runSimulation() {
+  if (simRunning) return;
+  simRunning = true;
+  resetSimulation(false);
+
+  const btn = document.getElementById('run-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Running...';
+  document.getElementById('sim-status').textContent = 'Simulation running...';
+  document.getElementById('sim-status').className = 'running';
+
+  const startTime = Date.now();
+  let lastPhase = 0;
+
+  const promises = events.map(ev => new Promise(resolve => {
+    setTimeout(() => {
+      if (ev.phase !== lastPhase) {
+        lastPhase = ev.phase;
+        setPhase(ev.phase);
+      }
+      logEvent(ev.type, ev.msg);
+      if (ev.pin) showPin(ev.pin);
+      if (ev.stat) setStat(ev.stat.id, ev.stat.val);
+      if (ev.stat2) setStat(ev.stat2.id, ev.stat2.val);
+      if (ev.progress !== undefined) setProgress(ev.progress);
+      resolve();
+    }, ev.delay);
+  }));
+
+  await Promise.all(promises);
+
+  document.getElementById('ticker').classList.add('visible');
+  document.getElementById('sim-status').textContent = '✓ Simulation complete';
+  document.getElementById('sim-status').className = '';
+  btn.disabled = false;
+  btn.innerHTML = '▶ Run Again';
+  simRunning = false;
+}
+</script>
 </body>
 </html>
