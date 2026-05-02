@@ -181,7 +181,7 @@ async function placeCall() {
         'Authorization': 'Bearer ' + groqKey
       },
       body: JSON.stringify({
-        model: 'llama3-8b-8192',
+        model: 'llama-3.1-8b-instant',
         messages: [
           { role: 'system', content: profile.system },
           { role: 'user', content: 'Begin the welfare check call now. Format each line as "AI: [text]" or "RESIDENT: [text]". Go through the full call naturally.' }
