@@ -3,447 +3,964 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>DisasterBridge — Risk Map</title>
+<title>DisasterBridge — Power Vulnerability Map</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.css"/>
 <style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'Segoe UI', sans-serif; background: #0d1117; color: #e6edf3; min-height: 100vh; }
-  nav { background: #161b22; border-bottom: 1px solid #21262d; padding: 14px 24px; display: flex; align-items: center; gap: 16px; }
-  nav a { color: #58a6ff; text-decoration: none; font-size: 0.9rem; }
-  nav span { color: #484f58; }
-  nav h2 { font-size: 1rem; color: #e6edf3; margin-left: auto; margin-right: auto; }
-  .container { max-width: 1100px; margin: 0 auto; padding: 30px 20px; }
-  h1 { font-size: 1.6rem; margin-bottom: 6px; }
-  .subtitle { color: #8b949e; font-size: 0.9rem; margin-bottom: 16px; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Segoe UI', sans-serif; background: #0d1117; color: #e6edf3; min-height: 100vh; }
 
-  /* SIMULATION CONTROLS */
-  .sim-controls { display: flex; align-items: center; gap: 14px; margin-bottom: 20px; flex-wrap: wrap; }
-  #run-btn { background: #238636; color: #fff; border: none; border-radius: 8px; padding: 11px 22px; font-size: 0.9rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 8px; }
-  #run-btn:hover { background: #2ea043; }
-  #run-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-  #reset-btn { background: transparent; border: 1px solid #30363d; color: #8b949e; border-radius: 8px; padding: 10px 16px; font-size: 0.85rem; cursor: pointer; }
-  #reset-btn:hover { border-color: #58a6ff; color: #58a6ff; }
-  #sim-status { font-size: 0.82rem; color: #8b949e; }
-  #sim-status.running { color: #3fb950; }
-  #sim-progress { flex: 1; min-width: 160px; height: 4px; background: #21262d; border-radius: 2px; overflow: hidden; }
-  #sim-bar { height: 100%; width: 0%; background: #238636; transition: width 0.4s; border-radius: 2px; }
+nav { background: #161b22; border-bottom: 1px solid #21262d; padding: 12px 20px; display: flex; align-items: center; gap: 14px; }
+nav a { color: #58a6ff; text-decoration: none; font-size: 0.85rem; }
+nav h2 { font-size: 0.95rem; color: #e6edf3; margin-inline: auto; }
 
-  /* PHASE INDICATOR */
-  .phase-row { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
-  .phase { padding: 5px 14px; border-radius: 20px; font-size: 0.75rem; border: 1px solid #30363d; color: #484f58; transition: all 0.3s; }
-  .phase.active { border-color: #3fb950; color: #3fb950; background: #23863620; font-weight: 700; }
-  .phase.done { border-color: #484f58; color: #484f58; background: #21262d; }
+/* ── LAYOUT ── */
+.page { display: grid; grid-template-columns: 210px 1fr 220px; gap: 14px; max-width: 1340px; margin: 0 auto; padding: 16px; }
+@media(max-width:960px) { .page { grid-template-columns: 1fr; } }
 
-  .legend { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 16px; }
-  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 0.82rem; color: #c9d1d9; }
-  .dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+/* ── LEFT CONTROLS ── */
+.lp { background: #161b22; border: 1px solid #21262d; border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+.lp h3 { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1.2px; color: #484f58; }
+.lp label { font-size: 0.76rem; color: #8b949e; display: block; margin-bottom: 3px; }
+.lp select { width: 100%; background: #0d1117; border: 1px solid #30363d; border-radius: 6px; padding: 7px 9px; color: #e6edf3; font-size: 0.82rem; }
+.divider { height: 1px; background: #21262d; }
 
-  .map { background: #1c2128; border: 1px solid #21262d; border-radius: 12px; padding: 20px; position: relative; overflow: hidden; min-height: 440px; }
-  .street-h { position: absolute; height: 2px; background: #21262d; left: 0; right: 0; }
-  .street-v { position: absolute; width: 2px; background: #21262d; top: 0; bottom: 0; }
-  .zone-label { position: absolute; font-size: 0.68rem; color: #484f58; text-transform: uppercase; letter-spacing: 1px; }
+#run-btn   { background: #238636; color: #fff; border: none; border-radius: 8px; padding: 10px; font-size: 0.86rem; font-weight: 700; cursor: pointer; width: 100%; }
+#run-btn:hover { background: #2ea043; }
+#run-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+#reset-btn { background: transparent; border: 1px solid #30363d; color: #8b949e; border-radius: 8px; padding: 8px; font-size: 0.82rem; cursor: pointer; width: 100%; }
+#reset-btn:hover { border-color: #f85149; color: #f85149; }
 
-  .pin { position: absolute; width: 18px; height: 18px; border-radius: 50%; border: 2px solid #0d1117; cursor: pointer; transition: transform 0.15s, opacity 0.4s; display: flex; align-items: center; justify-content: center; font-size: 0.55rem; font-weight: 700; color: #fff; opacity: 0; }
-  .pin.visible { opacity: 1; }
-  .pin:hover { transform: scale(1.4); z-index: 10; }
-  .pin.pulse { animation: pulse 1.5s infinite; }
-  @keyframes pulse { 0%,100% { box-shadow: 0 0 0 0 rgba(248,81,73,0.5); } 50% { box-shadow: 0 0 0 8px rgba(248,81,73,0); } }
+/* View layer buttons */
+.view-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
+.vbtn { background: #0d1117; border: 1px solid #30363d; color: #8b949e; border-radius: 6px; padding: 6px 4px; font-size: 0.72rem; cursor: pointer; text-align: center; transition: all 0.15s; }
+.vbtn.active { border-color: #58a6ff; color: #58a6ff; background: #0d1f38; font-weight: 700; }
+.vbtn:hover:not(.active) { border-color: #484f58; color: #e6edf3; }
 
-  .tooltip { display: none; position: absolute; background: #161b22; border: 1px solid #21262d; border-radius: 8px; padding: 12px 14px; font-size: 0.82rem; width: 220px; z-index: 20; line-height: 1.6; color: #c9d1d9; pointer-events: none; }
-  .pin:hover .tooltip { display: block; top: 24px; left: 50%; transform: translateX(-50%); }
+/* Status circle */
+.circ-wrap { text-align: center; }
+#status-circle { width: 60px; height: 60px; border-radius: 50%; background: #30363d; margin: 6px auto; transition: background 0.6s; box-shadow: 0 0 0 3px #21262d; }
+#pwr-num { font-size: 1.4rem; font-weight: 800; color: #e6edf3; }
+#pwr-lbl { font-size: 0.7rem; color: #8b949e; }
 
-  /* EVENT LOG */
-  .event-log { background: #0d1117; border: 1px solid #21262d; border-radius: 8px; padding: 12px 16px; margin-top: 16px; max-height: 140px; overflow-y: auto; font-size: 0.8rem; font-family: monospace; }
-  .event-log .ev { color: #8b949e; margin-bottom: 4px; }
-  .event-log .ev.crit { color: #f85149; }
-  .event-log .ev.ok { color: #3fb950; }
-  .event-log .ev.info { color: #58a6ff; }
+/* System bars */
+.sbar-row { display: flex; flex-direction: column; gap: 5px; }
+.sbar { display: flex; align-items: center; gap: 6px; }
+.sbar .sk { font-size: 0.7rem; color: #8b949e; width: 44px; flex-shrink: 0; }
+.sbar-track { flex: 1; height: 6px; background: #21262d; border-radius: 3px; overflow: hidden; }
+.sbar-fill { height: 100%; border-radius: 3px; transition: width 0.4s; }
+.sbar .sv { font-size: 0.7rem; width: 32px; text-align: right; font-weight: 600; }
 
-  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 14px; margin-top: 20px; }
-  .stat { background: #161b22; border: 1px solid #21262d; border-radius: 10px; padding: 16px; }
-  .stat .val { font-size: 1.8rem; font-weight: 700; color: #58a6ff; transition: color 0.3s; }
-  .stat .val.alert { color: #f85149; }
-  .stat .lbl { font-size: 0.78rem; color: #8b949e; margin-top: 4px; }
+/* Info rows */
+.irow { display: flex; justify-content: space-between; font-size: 0.74rem; padding: 3px 0; border-bottom: 1px solid #21262d20; }
+.irow:last-child { border: none; }
+.ik { color: #8b949e; }
+.iv { font-weight: 600; }
+.iv.d { color: #f85149; } .iv.w { color: #d29922; } .iv.g { color: #3fb950; }
 
-  .ticker { background: #161b22; border: 1px solid #f85149; border-radius: 8px; padding: 12px 16px; margin-top: 16px; font-size: 0.85rem; color: #f85149; opacity: 0; transition: opacity 0.5s; }
-  .ticker.visible { opacity: 1; }
+/* ── CENTRE MAP ── */
+.map-col {}
+.map-wrap { position: relative; border-radius: 10px; overflow: hidden; border: 1px solid #21262d; }
+#leaflet-map { width: 100%; height: 460px; }
 
-  .btn-link { display: inline-block; padding: 10px 20px; border-radius: 8px; font-size: 0.88rem; text-decoration: none; background: #1f6feb; color: #fff; margin-top: 24px; margin-right: 10px; }
-  .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid #ffffff44; border-top-color: #fff; border-radius: 50%; animation: spin 0.7s linear infinite; }
-  @keyframes spin { to { transform: rotate(360deg); } }
+/* Legend overlay */
+#map-legend { position: absolute; bottom: 10px; left: 10px; z-index: 1000; background: #0d1117cc; border: 1px solid #21262d; border-radius: 8px; padding: 8px 12px; backdrop-filter: blur(4px); }
+#map-legend .leg-title { font-size: 0.68rem; color: #8b949e; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 1px; }
+#map-legend .leg-bar { width: 140px; height: 10px; border-radius: 5px; background: linear-gradient(to right, #8b0000, #f85149, #e36209, #d29922, #3fb950); margin-bottom: 4px; }
+.leg-labels { display: flex; justify-content: space-between; font-size: 0.62rem; color: #8b949e; }
+#leg-layer-name { font-size: 0.66rem; color: #58a6ff; margin-top: 3px; text-align: center; }
+
+/* View label overlay */
+#view-label { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); z-index: 1000; background: #0d1117cc; border: 1px solid #30363d; border-radius: 20px; padding: 4px 14px; font-size: 0.72rem; color: #58a6ff; pointer-events: none; backdrop-filter: blur(4px); }
+
+/* Phase + progress */
+.phase-row { display: flex; gap: 5px; margin-top: 10px; flex-wrap: wrap; }
+.phase { padding: 3px 10px; border-radius: 20px; font-size: 0.68rem; border: 1px solid #30363d; color: #484f58; transition: all 0.3s; }
+.phase.active { border-color: #3fb950; color: #3fb950; background: #23863615; font-weight: 700; }
+.phase.done { background: #21262d; color: #484f58; border-color: #21262d; }
+
+.prog-row { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
+#sim-progress { flex: 1; height: 3px; background: #21262d; border-radius: 2px; overflow: hidden; }
+#sim-bar { height: 100%; width: 0; background: linear-gradient(to right, #1f6feb, #3fb950); transition: width 0.4s; border-radius: 2px; }
+#sim-status { font-size: 0.7rem; color: #8b949e; white-space: nowrap; }
+#sim-status.running { color: #3fb950; }
+
+/* Event log */
+.elog { background: #0d1117; border: 1px solid #21262d; border-radius: 8px; padding: 9px 12px; margin-top: 10px; max-height: 110px; overflow-y: auto; font-size: 0.72rem; font-family: monospace; }
+.ev { margin-bottom: 2px; }
+.ev.crit { color: #f85149; } .ev.ok { color: #3fb950; } .ev.info { color: #58a6ff; } .ev.warn { color: #d29922; } .ev.sys { color: #484f58; }
+
+/* ── RIGHT STATS ── */
+.rp { background: #161b22; border: 1px solid #21262d; border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 12px; }
+.rp h3 { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1.2px; color: #484f58; }
+
+.big-stat { text-align: center; }
+.big-stat .bv { font-size: 1.7rem; font-weight: 800; color: #58a6ff; transition: color 0.4s; }
+.big-stat .bv.d { color: #f85149; }
+.big-stat .bl { font-size: 0.68rem; color: #8b949e; margin-top: 1px; }
+
+/* Timeline chart */
+#timeline-canvas { width: 100%; height: 70px; border-radius: 6px; background: #0d1117; border: 1px solid #21262d; display: block; }
+
+/* Flagged banner */
+#flag-banner { display: none; position: fixed; bottom: 20px; right: 20px; background: #1a1a2e; color: #58a6ff; border: 1px solid #1f6feb55; padding: 12px 16px; border-radius: 10px; font-size: 0.8rem; z-index: 9999; box-shadow: 0 4px 20px #0009; cursor: pointer; max-width: 250px; line-height: 1.6; }
+#flag-banner strong { display: block; color: #e6edf3; margin-bottom: 2px; font-size: 0.88rem; }
+
+/* Bottom links */
+.bot { max-width: 1340px; margin: 8px auto 20px; padding: 0 16px; display: flex; gap: 10px; }
+.btn-l { display: inline-block; padding: 9px 18px; border-radius: 8px; font-size: 0.84rem; text-decoration: none; color: #fff; }
+
+/* Leaflet dark override */
+.leaflet-container { background: #1c2128 !important; }
+.leaflet-popup-content-wrapper { background: #161b22; color: #e6edf3; border: 1px solid #21262d; box-shadow: 0 4px 16px #0008; }
+.leaflet-popup-tip { background: #161b22; }
+
+.spinner { display: inline-block; width: 11px; height: 11px; border: 2px solid #ffffff33; border-top-color: #fff; border-radius: 50%; animation: spin 0.7s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
 </style>
 </head>
 <body>
+
 <nav>
   <a href="index.html">← Home</a>
-  <span>/</span>
-  <h2>🗺️ Hurricane Beryl — Houston Risk Map</h2>
+  <span style="color:#484f58">/</span>
+  <h2 id="nav-title">🗺️ Power Vulnerability Map</h2>
 </nav>
 
-<div class="container">
-  <h1>Disability Vulnerability Map</h1>
-  <p class="subtitle">Phase 1 simulation · Pre-landfall +6h · Harris County, TX · Hurricane Beryl scenario</p>
+<div class="page">
 
-  <!-- SIMULATION CONTROLS -->
-  <div class="sim-controls">
-    <button id="run-btn" onclick="runSimulation()">▶ Run Simulation</button>
-    <button id="reset-btn" onclick="resetSimulation()">↺ Reset</button>
-    <div id="sim-progress"><div id="sim-bar"></div></div>
-    <span id="sim-status">Ready — click Run to begin</span>
+<!-- ══════ LEFT ══════ -->
+<div class="lp">
+  <h3>Controls</h3>
+
+  <div>
+    <label>City</label>
+    <select id="city-sel">
+      <option value="Houston">Houston, TX</option>
+      <option value="Minneapolis">Minneapolis, MN</option>
+      <option value="Los Angeles">Los Angeles, CA</option>
+      <option value="New York City">New York City, NY</option>
+    </select>
   </div>
 
-  <!-- PHASE INDICATORS -->
-  <div class="phase-row">
-    <div class="phase" id="phase-1">① Scanning residents</div>
-    <div class="phase" id="phase-2">② Flagging critical cases</div>
-    <div class="phase" id="phase-3">③ Dispatching resources</div>
-    <div class="phase" id="phase-4">④ Placing welfare calls</div>
-    <div class="phase" id="phase-5">⑤ Shelters confirmed</div>
+  <div>
+    <label>Disaster Type</label>
+    <select id="dis-sel">
+      <option value="Power Outage">⚡ Power Outage</option>
+      <option value="Heatwave">🌡 Heatwave</option>
+      <option value="Flood">🌊 Flood</option>
+    </select>
   </div>
 
-  <div class="legend">
-    <div class="legend-item"><div class="dot" style="background:#f85149"></div> Critical — immediate outreach</div>
-    <div class="legend-item"><div class="dot" style="background:#d29922"></div> High risk — monitoring</div>
-    <div class="legend-item"><div class="dot" style="background:#3fb950"></div> Accessible shelter</div>
-    <div class="legend-item"><div class="dot" style="background:#58a6ff"></div> Medical supply depot</div>
-    <div class="legend-item"><div class="dot" style="background:#bc8cff"></div> Transport pickup</div>
-  </div>
-
-  <div class="map" id="map">
-    <div class="street-h" style="top:25%"></div>
-    <div class="street-h" style="top:50%"></div>
-    <div class="street-h" style="top:75%"></div>
-    <div class="street-v" style="left:25%"></div>
-    <div class="street-v" style="left:50%"></div>
-    <div class="street-v" style="left:75%"></div>
-    <div class="zone-label" style="top:6px;left:8px">Kashmere Gardens</div>
-    <div class="zone-label" style="top:6px;left:52%">Fifth Ward</div>
-    <div class="zone-label" style="top:51%;left:8px">Third Ward</div>
-    <div class="zone-label" style="top:51%;left:52%">East Downtown</div>
-
-    <!-- All pins start hidden, revealed by simulation -->
-    <div class="pin pulse" id="pin-margaret" style="background:#f85149;top:18%;left:12%">CR
-      <div class="tooltip"><strong>Margaret T., 74</strong><br>Oxygen dependent · Mobility aid<br>⚠️ Power outage risk in 2h<br>📞 Welfare call queued</div>
-    </div>
-    <div class="pin pulse" id="pin-zone3b" style="background:#f85149;top:38%;left:20%">CR
-      <div class="tooltip"><strong>Zone 3B — 14 residents</strong><br>Deaf/HoH community block<br>⚠️ No alert reception<br>📢 Visual alert unit dispatched</div>
-    </div>
-    <div class="pin pulse" id="pin-james" style="background:#f85149;top:62%;left:44%">CR
-      <div class="tooltip"><strong>James R., 58</strong><br>Quadriplegic · Ventilator<br>⚠️ Caregiver absent<br>🚑 Medical team en route</div>
-    </div>
-    <div class="pin pulse" id="pin-aisha" style="background:#f85149;top:15%;left:70%">CR
-      <div class="tooltip"><strong>Aisha M., 31</strong><br>Autism spectrum · Non-verbal<br>Routine disrupted<br>👩‍⚕️ Support worker contacted</div>
-    </div>
-    <div class="pin pulse" id="pin-flood" style="background:#f85149;top:78%;left:78%">CR
-      <div class="tooltip"><strong>Flood zone — 9 residents</strong><br>Wheelchair users, ground floor<br>⚠️ Evacuation order issued<br>🚐 Accessible van dispatched</div>
-    </div>
-    <div class="pin" id="pin-hi1" style="background:#d29922;top:28%;left:55%">HI
-      <div class="tooltip"><strong>Senior block — 22 residents</strong><br>Mixed mobility / cognitive<br>📋 Monitoring hourly</div>
-    </div>
-    <div class="pin" id="pin-hi2" style="background:#d29922;top:70%;left:18%">HI
-      <div class="tooltip"><strong>Group home — 8 residents</strong><br>Developmental disabilities<br>📋 Staff on standby</div>
-    </div>
-    <div class="pin" id="pin-hi3" style="background:#d29922;top:44%;left:80%">HI
-      <div class="tooltip"><strong>Visual impairment cluster</strong><br>Guide dog households<br>📋 Buddy system active</div>
-    </div>
-    <div class="pin" id="pin-sh1" style="background:#3fb950;top:48%;left:48%">SH
-      <div class="tooltip"><strong>NRG Arena — Primary Shelter</strong><br>✓ Wheelchair accessible<br>✓ Medical bay on-site<br>✓ ASL interpreter<br>Capacity: 800 · Current: 243</div>
-    </div>
-    <div class="pin" id="pin-sh2" style="background:#3fb950;top:20%;left:35%">SH
-      <div class="tooltip"><strong>Kashmere MS Shelter</strong><br>✓ Ground floor only<br>⚠️ No generator yet<br>Capacity: 200 · Current: 67</div>
-    </div>
-    <div class="pin" id="pin-md" style="background:#58a6ff;top:55%;left:62%">MD
-      <div class="tooltip"><strong>Medical Supply Depot</strong><br>Oxygen · Medications<br>Portable ventilators<br>📍 2411 Leeland St</div>
-    </div>
-    <div class="pin" id="pin-tp" style="background:#bc8cff;top:33%;left:72%">TP
-      <div class="tooltip"><strong>Accessible Transport Hub</strong><br>3 wheelchair vans available<br>⏱ Next pickup: 14 min<br>📞 713-555-0199</div>
+  <div>
+    <label>View Layer</label>
+    <div class="view-btns">
+      <button class="vbtn active" onclick="setView('power')">⚡ Power</button>
+      <button class="vbtn" onclick="setView('radio')">📻 Radio</button>
+      <button class="vbtn" onclick="setView('medical')">🏥 Medical</button>
+      <button class="vbtn" onclick="setView('mobile')">📡 Mobile</button>
     </div>
   </div>
 
-  <!-- EVENT LOG -->
-  <div class="event-log" id="event-log">
-    <div class="ev">[ Simulation ready — press Run to begin ]</div>
+  <button id="run-btn" onclick="toggleSim()">▶ Run Simulation</button>
+  <button id="reset-btn" onclick="resetSim()">↺ Reset</button>
+
+  <div class="divider"></div>
+
+  <h3>City Status</h3>
+  <div class="circ-wrap">
+    <div id="status-circle"></div>
+    <div id="pwr-num">—</div>
+    <div id="pwr-lbl">Power Index</div>
   </div>
 
-  <div class="ticker" id="ticker">⚠️ LIVE ALERT: Storm surge upgraded to Cat 2 · All Zone A mobility-impaired residents — immediate evacuation recommended · Transport: 713-555-0199</div>
+  <div class="divider"></div>
 
-  <div class="stats">
-    <div class="stat"><div class="val" id="stat-flagged">0</div><div class="lbl">Residents flagged</div></div>
-    <div class="stat"><div class="val alert" id="stat-critical">0</div><div class="lbl">Critical — action needed</div></div>
-    <div class="stat"><div class="val" id="stat-shelters">0</div><div class="lbl">Accessible shelters open</div></div>
-    <div class="stat"><div class="val" id="stat-calls">0</div><div class="lbl">AI welfare calls placed</div></div>
-    <div class="stat"><div class="val" id="stat-contact">—</div><div class="lbl">Contact success rate</div></div>
+  <h3>Power Systems</h3>
+  <div class="sbar-row">
+    <div class="sbar">
+      <span class="sk">Radio</span>
+      <div class="sbar-track"><div class="sbar-fill" id="bar-radio" style="width:100%;background:#3fb950"></div></div>
+      <span class="sv iv g" id="val-radio">1.00</span>
+    </div>
+    <div class="sbar">
+      <span class="sk">Medical</span>
+      <div class="sbar-track"><div class="sbar-fill" id="bar-medical" style="width:100%;background:#3fb950"></div></div>
+      <span class="sv iv g" id="val-medical">1.00</span>
+    </div>
+    <div class="sbar">
+      <span class="sk">Mobile</span>
+      <div class="sbar-track"><div class="sbar-fill" id="bar-mobile" style="width:100%;background:#3fb950"></div></div>
+      <span class="sv iv g" id="val-mobile">1.00</span>
+    </div>
+    <div class="sbar">
+      <span class="sk">Grid</span>
+      <div class="sbar-track"><div class="sbar-fill" id="bar-grid" style="width:100%;background:#3fb950"></div></div>
+      <span class="sv iv g" id="val-grid">1.00</span>
+    </div>
   </div>
 
-  <a class="btn-link" href="call.html">→ Try Call Simulator</a>
-  <a class="btn-link" href="card.html" style="background:#238636">→ Generate Responder Card</a>
+  <div class="divider"></div>
+
+  <h3>Drain / Tick</h3>
+  <div class="irow"><span class="ik">Radio</span><span class="iv" id="dr-radio">—</span></div>
+  <div class="irow"><span class="ik">Medical</span><span class="iv" id="dr-medical">—</span></div>
+  <div class="irow"><span class="ik">Mobile</span><span class="iv" id="dr-mobile">—</span></div>
+  <div class="irow"><span class="ik">Grid</span><span class="iv" id="dr-grid">—</span></div>
+
+  <div class="divider"></div>
+
+  <h3>Summary</h3>
+  <div class="irow"><span class="ik">Population</span><span class="iv" id="s-pop">—</span></div>
+  <div class="irow"><span class="ik">Zones</span><span class="iv" id="s-zones">—</span></div>
+  <div class="irow"><span class="ik">Critical</span><span class="iv d" id="s-crit">0</span></div>
+  <div class="irow"><span class="ik">Tick</span><span class="iv" id="s-tick">0</span></div>
 </div>
 
+<!-- ══════ CENTRE ══════ -->
+<div class="map-col">
+  <div class="map-wrap">
+    <div id="leaflet-map"></div>
+    <div id="view-label">⚡ Power Index</div>
+    <div id="map-legend">
+      <div class="leg-title" id="leg-title">Power Level</div>
+      <div class="leg-bar" id="leg-bar"></div>
+      <div class="leg-labels"><span>0% Critical</span><span>50%</span><span>100% Healthy</span></div>
+      <div id="leg-layer-name">Overall power resilience</div>
+    </div>
+  </div>
+
+  <div class="phase-row">
+    <div class="phase" id="ph-1">① Zones initialised</div>
+    <div class="phase" id="ph-2">② Disaster onset</div>
+    <div class="phase" id="ph-3">③ Degrading</div>
+    <div class="phase" id="ph-4">④ Critical breach</div>
+    <div class="phase" id="ph-5">⑤ Welfare response</div>
+  </div>
+
+  <div class="prog-row">
+    <div id="sim-progress"><div id="sim-bar"></div></div>
+    <div id="sim-status">Ready — choose city &amp; disaster, then Run</div>
+  </div>
+
+  <div class="elog" id="event-log">
+    <div class="ev sys">[ Simulation ready ]</div>
+  </div>
+</div>
+
+<!-- ══════ RIGHT STATS ══════ -->
+<div class="rp">
+  <h3>Flagged People</h3>
+  <div class="big-stat">
+    <div class="bv d" id="st-flagged">0</div>
+    <div class="bl">Residents flagged</div>
+  </div>
+  <div class="big-stat">
+    <div class="bv d" id="st-critical">0</div>
+    <div class="bl">Critical zones (&lt;40%)</div>
+  </div>
+
+  <div class="divider"></div>
+  <h3>Response</h3>
+  <div class="big-stat">
+    <div class="bv" id="st-shelters">0</div>
+    <div class="bl">Shelters open</div>
+  </div>
+  <div class="big-stat">
+    <div class="bv" id="st-calls">0</div>
+    <div class="bl">AI calls placed</div>
+  </div>
+
+  <div class="divider"></div>
+  <h3>Power Timeline</h3>
+  <canvas id="timeline-canvas" width="200" height="70"></canvas>
+  <div style="font-size:0.62rem;color:#484f58;text-align:center">Avg power over simulation ticks</div>
+
+  <div class="divider"></div>
+  <h3>Simulation</h3>
+  <div class="big-stat">
+    <div class="bv" id="st-tick">0</div>
+    <div class="bl">Ticks elapsed</div>
+  </div>
+  <div class="big-stat">
+    <div class="bv" id="st-time">0s</div>
+    <div class="bl">Real time</div>
+  </div>
+</div>
+
+</div><!-- .page -->
+
+<div class="bot">
+  <a class="btn-l" href="call.html" style="background:#1f6feb">📞 Welfare Call Simulator</a>
+  <a class="btn-l" href="card.html" style="background:#b91c1c">🚨 People Requiring Attention</a>
+</div>
+
+<div id="flag-banner" onclick="window.location.href='card.html'">
+  <strong id="fb-title">People flagged</strong>
+  <div id="fb-body">Power threshold breached</div>
+  <span style="font-size:0.72rem;text-decoration:underline;color:#58a6ff">Open dashboard →</span>
+</div>
+
+<!-- ─── SCRIPTS ─── -->
+<script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.js"></script>
 <script>
-let simRunning = false;
+'use strict';
 
-const events = [
-  // Phase 1 — scanning
-  { phase: 1, delay: 400,  type: 'info', msg: 'AI system initialised — scanning Harris County disability registry...' },
-  { phase: 1, delay: 900,  type: 'info', msg: 'Cross-referencing 4,812 registered residents with flood zone map...' },
-  { phase: 1, delay: 1500, type: 'info', msg: '312 residents flagged for priority outreach.', stat: { id: 'stat-flagged', val: 312 }, progress: 15 },
-
-  // Phase 2 — critical flags appear
-  { phase: 2, delay: 2200, type: 'crit', msg: '⚠ CRITICAL: Margaret T., 74 — oxygen dependent, power outage risk in 2h.', pin: 'pin-margaret' },
-  { phase: 2, delay: 2700, type: 'crit', msg: '⚠ CRITICAL: Zone 3B — 14 Deaf/HoH residents, no alert reception.', pin: 'pin-zone3b' },
-  { phase: 2, delay: 3100, type: 'crit', msg: '⚠ CRITICAL: James R., 58 — ventilator dependent, caregiver absent.', pin: 'pin-james' },
-  { phase: 2, delay: 3500, type: 'crit', msg: '⚠ CRITICAL: Aisha M., 31 — autism spectrum, routine severely disrupted.', pin: 'pin-aisha' },
-  { phase: 2, delay: 3900, type: 'crit', msg: '⚠ CRITICAL: Flood zone overlap — 9 wheelchair users, ground floor.', pin: 'pin-flood', stat: { id: 'stat-critical', val: 47 }, progress: 35 },
-
-  // Phase 2b — high risk
-  { phase: 2, delay: 4400, type: 'info', msg: 'Flagging 22 senior block residents — mixed mobility and cognitive needs.', pin: 'pin-hi1' },
-  { phase: 2, delay: 4700, type: 'info', msg: 'Flagging group home — 8 residents with developmental disabilities.', pin: 'pin-hi2' },
-  { phase: 2, delay: 5000, type: 'info', msg: 'Flagging visual impairment cluster — guide dog households.', pin: 'pin-hi3' },
-
-  // Phase 3 — dispatch resources
-  { phase: 3, delay: 5600, type: 'ok',   msg: '✓ Medical supply depot confirmed active — 2411 Leeland St.', pin: 'pin-md', progress: 50 },
-  { phase: 3, delay: 6000, type: 'ok',   msg: '✓ Accessible transport hub activated — 3 wheelchair vans on standby.', pin: 'pin-tp' },
-  { phase: 3, delay: 6400, type: 'crit', msg: '🚑 Medical team dispatched to James R. — ETA 18 minutes.' },
-  { phase: 3, delay: 6800, type: 'info', msg: '🚐 Accessible van dispatched to flood zone — 9 residents.' },
-  { phase: 3, delay: 7200, type: 'info', msg: '📢 Visual alert units deployed to Zone 3B (Deaf/HoH block).' },
-
-  // Phase 4 — welfare calls
-  { phase: 4, delay: 7800, type: 'ok',   msg: '📞 AI welfare call placed to Margaret T. — connected, oxygen 4h remaining.', stat: { id: 'stat-calls', val: 1 }, progress: 65 },
-  { phase: 4, delay: 8300, type: 'ok',   msg: '📞 AI welfare call placed to Aisha\'s family — shelter transport requested.', stat: { id: 'stat-calls', val: 8 } },
-  { phase: 4, delay: 8700, type: 'ok',   msg: '📞 Welfare calls completed for 23 priority residents.', stat: { id: 'stat-calls', val: 23 }, stat2: { id: 'stat-contact', val: '94%' }, progress: 80 },
-
-  // Phase 5 — shelters
-  { phase: 5, delay: 9300, type: 'ok',   msg: '✓ NRG Arena shelter confirmed — wheelchair accessible, ASL interpreter on-site.', pin: 'pin-sh1', stat: { id: 'stat-shelters', val: 1 } },
-  { phase: 5, delay: 9700, type: 'ok',   msg: '✓ Kashmere MS shelter open — generator being installed.', pin: 'pin-sh2', stat: { id: 'stat-shelters', val: 8 }, progress: 95 },
-  { phase: 5, delay: 10300, type: 'ok',  msg: '✓ Simulation complete. All critical residents contacted. Resources deployed.', progress: 100 }
-];
-
-// ─────────────────────────────────────────
-//  CARD DATA — saved to People Requiring Attention when pin appears
-// ─────────────────────────────────────────
-const pinCards = {
-  'pin-margaret': {
-    name: 'Margaret Thompson, 74',
-    priority: 'CRITICAL',
-    priority_reason: 'Oxygen dependent — power outage, ~4h supply remaining',
-    medical_tags: ['Oxygen dependent', 'Portable concentrator', 'Walker', 'Lisinopril', 'Metformin'],
-    alert_tags: ['Power outage — ~4h oxygen remaining', 'Lives alone'],
-    medical_summary: 'Oxygen dependent with ~4h battery remaining on portable concentrator. Uses walker for mobility. Daily medications: lisinopril 10mg, metformin.',
-    communication_guide: 'Hard of hearing (hearing aid). Speaks slowly. Easily anxious — use calm, reassuring tone and short sentences. No smartphone.',
-    immediate_actions: ['Confirm exact oxygen hours remaining', 'Assess willingness to evacuate', 'Arrange pet-friendly transport — has dog (Buddy)'],
-    do_not: ['Rush or pressure her', 'Suggest leaving her dog behind', 'Use complex medical jargon'],
-    resources_needed: 'Accessible transport, backup oxygen supply, pet-friendly shelter',
-    contact: 'Daughter Sarah Thompson — 713-555-0142',
-    time_sensitive: 'Oxygen ~4h remaining. Power outage ongoing since 14:00.'
-  },
-  'pin-james': {
-    name: 'James Robinson, 58',
-    priority: 'CRITICAL',
-    priority_reason: 'Ventilator dependent, caregiver absent, battery ~6h remaining',
-    medical_tags: ['Quadriplegic (C4)', 'Ventilator dependent', 'Suction every 2h', 'Baclofen', 'Lisinopril', 'Warfarin'],
-    alert_tags: ['Ventilator battery ~6h', 'Caregiver absent', 'Suction required every 2h'],
-    medical_summary: 'C4 quadriplegic, ventilator dependent with ~6h battery. Requires airway suction every 2 hours. Medications: baclofen, lisinopril, warfarin.',
-    communication_guide: 'Speaks clearly. Fully cognitively intact. Prefers direct, medical-level communication.',
-    immediate_actions: ['Dispatch medical team immediately', 'Confirm exact ventilator battery hours', 'Arrange 2-person lift and accessible transport'],
-    do_not: ['Send non-medical personnel alone', 'Delay — ventilator failure is fatal', 'Attempt transfer without 2-person minimum'],
-    resources_needed: '2-person medical team, wheelchair-accessible van, portable ventilator backup',
-    contact: 'Wife Carol Robinson — 713-555-0298 | Backup caregiver: 713-555-0100',
-    time_sensitive: 'Ventilator battery ~6h. Suction due every 2h. Warfarin timing critical.'
-  },
-  'pin-aisha': {
-    name: 'Aisha Mensah, 31',
-    priority: 'HIGH',
-    priority_reason: 'Non-verbal, autism spectrum, severe routine disruption and sensory overload',
-    medical_tags: ['Autism spectrum (non-verbal)', 'AAC device user', 'Sensory sensitivity', 'Risperidone'],
-    alert_tags: ['Do NOT address Aisha directly', 'Sensory overload — currently distressed'],
-    medical_summary: 'Non-verbal, autism spectrum. Communicates via AAC device. Extreme sensory sensitivities to noise, crowds, and bright lights. Daily risperidone.',
-    communication_guide: 'ALWAYS address mother Grace — never Aisha directly. Keep environment quiet. No sudden movements or loud sounds.',
-    immediate_actions: ['Contact mother Grace first', 'Ensure quiet, calm approach on arrival', 'Allow comfort items: headphones, fidget tools, tablet'],
-    do_not: ['Speak directly to or about Aisha within earshot', 'Make sudden movements or loud sounds', 'Restrain under any circumstances'],
-    resources_needed: 'Autism-friendly shelter (away from crowds), family unit transport',
-    contact: 'Mother Grace Mensah — 713-555-0377 | Father Emmanuel — 713-555-0388',
-    time_sensitive: 'Routine severely disrupted. Sensory overload ongoing. Shelter must be low-stimulation.'
-  },
-  'pin-zone3b': {
-    name: 'Zone 3B — Deaf/HoH Community Block',
-    priority: 'CRITICAL',
-    priority_reason: '14 Deaf/hard of hearing residents with no emergency alert reception',
-    medical_tags: ['Deaf', 'Hard of Hearing', 'No audio alert access'],
-    alert_tags: ['Standard alerts not received', 'Visual alert units needed'],
-    medical_summary: '14 residents in Zone 3B are Deaf or hard of hearing and have not received standard audio emergency alerts.',
-    communication_guide: 'Use visual communication only — written notes, SMS, or sign language. Do not rely on spoken announcements.',
-    immediate_actions: ['Deploy visual alert units to block', 'Send SMS/text alerts to all residents', 'Dispatch ASL-capable responder'],
-    do_not: ['Rely on verbal communication', 'Assume alerts have been received'],
-    resources_needed: 'Visual alert devices, ASL interpreter, accessible transport',
-    contact: 'Zone coordinator: 713-555-0211',
-    time_sensitive: 'Residents unaware of storm surge upgrade. Immediate visual notification required.'
-  },
-  'pin-flood': {
-    name: 'Flood Zone Overlap — Wheelchair Users',
-    priority: 'CRITICAL',
-    priority_reason: '9 wheelchair users on ground floor in active flood zone',
-    medical_tags: ['Mobility impairment', 'Wheelchair dependent', 'Ground floor', 'Flood zone'],
-    alert_tags: ['Active flood zone', 'Ground floor — immediate risk', 'Evacuation order issued'],
-    medical_summary: '9 residents using wheelchairs living on ground floor in a zone with storm surge overlap. Evacuation order has been issued.',
-    communication_guide: 'Speak directly and clearly. Confirm transport arrangements before arrival to avoid delays.',
-    immediate_actions: ['Dispatch accessible vans immediately', 'Confirm each resident can self-transfer or needs assistance', 'Coordinate with NRG Arena accessible shelter'],
-    do_not: ['Use standard vehicles without ramp access', 'Delay — flooding imminent'],
-    resources_needed: 'Wheelchair-accessible vans (minimum 3), ramp access, accessible shelter beds',
-    contact: 'Area coordinator: 713-555-0199',
-    time_sensitive: 'Storm surge forecast in <3h. Evacuation must be completed before surge.'
-  }
+// ══════════════════════════════════════════
+//  CITIES
+// ══════════════════════════════════════════
+const CITIES = {
+  'Houston':       { lat: 29.7604, lon: -95.3698, zoom: 12 },
+  'Minneapolis':   { lat: 44.9778, lon: -93.2650, zoom: 12 },
+  'Los Angeles':   { lat: 34.0522, lon: -118.2437, zoom: 12 },
+  'New York City': { lat: 40.7128, lon: -74.0060,  zoom: 12 }
 };
 
-// ─────────────────────────────────────────
-//  SAVE PERSON TO LOCALSTORAGE
-// ─────────────────────────────────────────
-function savePersonFromMap(card) {
-  try {
-    const stored = JSON.parse(localStorage.getItem('dbridge_people') || '[]');
-    const idx = stored.findIndex(p => p.name && p.name.toLowerCase() === card.name.toLowerCase());
-    const record = {
-      id: idx >= 0 ? stored[idx].id : Date.now().toString() + Math.random().toString(36).slice(2,6),
-      name: card.name,
-      priority: card.priority || 'STANDARD',
-      lastCallTime: null,
-      fromMap: true,
-      mapTime: new Date().toISOString(),
-      card: card,
-      callSummary: 'Flagged by Risk Map simulation — Hurricane Beryl scenario'
-    };
-    if (idx >= 0) {
-      // Preserve call data if they've been called already
-      record.lastCallTime = stored[idx].lastCallTime;
-      record.callSummary = stored[idx].callSummary || record.callSummary;
-      stored[idx] = record;
-    } else {
-      stored.unshift(record);
-    }
-    localStorage.setItem('dbridge_people', JSON.stringify(stored));
-  } catch(e) {
-    console.warn('Map save failed:', e.message);
-  }
+// Houston-specific vulnerable residents
+const HOUSTON_RESIDENTS = [
+  { name:'Margaret Thompson, 74', latOff: 0.009, lonOff:-0.013, priority:'CRITICAL',
+    priority_reason:'Oxygen dependent — power outage imminent',
+    medical_tags:['Oxygen dependent','Portable concentrator','Walker','Lisinopril','Metformin'],
+    alert_tags:['Power outage — ~4h oxygen remaining','Lives alone'],
+    medical_summary:'Oxygen dependent, ~4h concentrator battery. Uses walker. Lisinopril 10mg, metformin daily.',
+    communication_guide:'Hard of hearing (hearing aid). Slow speech. Easily anxious — calm, short sentences.',
+    immediate_actions:['Confirm oxygen hours remaining','Assess evacuation willingness','Arrange pet-friendly transport (has dog Buddy)'],
+    do_not:['Rush her','Suggest leaving her dog','Use complex medical jargon'],
+    resources_needed:'Accessible transport, backup oxygen, pet-friendly shelter',
+    contact:'Daughter Sarah Thompson — 713-555-0142',
+    time_sensitive:'Oxygen ~4h remaining. Power outage ongoing.' },
+  { name:'James Robinson, 58', latOff:-0.007, lonOff: 0.010, priority:'CRITICAL',
+    priority_reason:'Ventilator dependent, caregiver absent, battery ~6h',
+    medical_tags:['Quadriplegic (C4)','Ventilator dependent','Suction every 2h','Baclofen','Lisinopril','Warfarin'],
+    alert_tags:['Ventilator battery ~6h','Caregiver absent'],
+    medical_summary:'C4 quadriplegic, ventilator dependent ~6h battery. Suction every 2h. Baclofen, lisinopril, warfarin.',
+    communication_guide:'Speaks clearly. Cognitively intact. Prefers direct, medical-level communication.',
+    immediate_actions:['Dispatch medical team immediately','Confirm ventilator battery hours','Arrange 2-person lift + accessible transport'],
+    do_not:['Send non-medical staff alone','Delay — ventilator failure is fatal'],
+    resources_needed:'2-person medical team, wheelchair van, spare ventilator',
+    contact:'Wife Carol — 713-555-0298 | Backup: 713-555-0100',
+    time_sensitive:'Ventilator battery ~6h. Suction every 2h. Warfarin timing critical.' },
+  { name:'Aisha Mensah, 31', latOff: 0.013, lonOff: 0.008, priority:'HIGH',
+    priority_reason:'Non-verbal autism, severe routine disruption',
+    medical_tags:['Autism spectrum (non-verbal)','AAC device','Sensory sensitivity','Risperidone'],
+    alert_tags:['Do NOT address Aisha directly','Sensory overload — distressed'],
+    medical_summary:'Non-verbal autism, AAC device. Extreme sensory sensitivities. Daily risperidone.',
+    communication_guide:'ALWAYS address mother Grace. Keep quiet and calm. No sudden movements.',
+    immediate_actions:['Contact mother Grace first','Ensure calm quiet approach','Allow comfort items'],
+    do_not:['Speak to Aisha directly','Loud sounds or sudden moves','Restrain'],
+    resources_needed:'Autism-friendly shelter, family transport',
+    contact:'Mother Grace — 713-555-0377 | Father Emmanuel — 713-555-0388',
+    time_sensitive:'Routine disrupted. Sensory overload. Low-stimulation shelter required.' }
+];
+
+// ══════════════════════════════════════════
+//  MATHS
+// ══════════════════════════════════════════
+function randn(mean=0, std=1) {
+  const u = Math.random()+1e-12, v = Math.random();
+  return mean + std * Math.sqrt(-2*Math.log(u)) * Math.cos(2*Math.PI*v);
 }
+function clip(v,lo,hi){ return Math.min(hi,Math.max(lo,v)); }
+function wChoice(arr,w){ let r=Math.random(),c=0; for(let i=0;i<arr.length;i++){c+=w[i];if(r<c)return arr[i];} return arr[arr.length-1]; }
+function mean(arr){ return arr.reduce((s,v)=>s+v,0)/arr.length; }
 
-let savedCount = 0;
-function showPin(id) {
-  const el = document.getElementById(id);
-  if (el) el.classList.add('visible');
-  // Save to People Requiring Attention if this pin has card data
-  if (pinCards[id]) {
-    savePersonFromMap(pinCards[id]);
-    savedCount++;
-    updateSavedBanner();
-  }
-}
+// ══════════════════════════════════════════
+//  GENERATE DATA
+// ══════════════════════════════════════════
+function generateData(lat, lon, n=180) {
+  const elderlyClusterA = { lat: lat+0.015, lon: lon-0.010 };
+  const elderlyClusterB = { lat: lat-0.012, lon: lon+0.018 };
 
-let bannerTimeout;
-function updateSavedBanner() {
-  let b = document.getElementById('map-saved-banner');
-  if (!b) {
-    b = document.createElement('div');
-    b.id = 'map-saved-banner';
-    b.style.cssText = 'position:fixed;bottom:20px;right:20px;background:#1f3a6e;color:#58a6ff;border:1px solid #1f6feb44;padding:10px 16px;border-radius:8px;font-size:0.82rem;z-index:999;box-shadow:0 4px 12px #0008;cursor:pointer;';
-    b.onclick = () => window.location.href = 'card.html';
-    document.body.appendChild(b);
-  }
-  b.innerHTML = '🚨 <strong>' + savedCount + ' people</strong> added to Requiring Attention → <span style="text-decoration:underline">View dashboard</span>';
-  clearTimeout(bannerTimeout);
-}
+  return Array.from({length:n}, () => {
+    const c = wChoice([0,1,2],[0.40,0.35,0.25]);
+    const spread = [0.010, 0.020, 0.036][c];
 
-// ─────────────────────────────────────────
-//  SIMULATION ENGINE
-// ─────────────────────────────────────────
-function logEvent(type, msg) {
-  const log = document.getElementById('event-log');
-  const d = document.createElement('div');
-  d.className = 'ev ' + type;
-  const time = new Date().toLocaleTimeString('en-US', { hour12: false });
-  d.textContent = '[' + time + '] ' + msg;
-  log.appendChild(d);
-  log.scrollTop = log.scrollHeight;
-}
-
-function setStat(id, val) {
-  const el = document.getElementById(id);
-  if (el) el.textContent = val;
-}
-
-function setPhase(num) {
-  for (let i = 1; i <= 5; i++) {
-    const el = document.getElementById('phase-' + i);
-    if (i < num) el.className = 'phase done';
-    else if (i === num) el.className = 'phase active';
-    else el.className = 'phase';
-  }
-}
-
-function setProgress(pct) {
-  document.getElementById('sim-bar').style.width = pct + '%';
-}
-
-async function runSimulation() {
-  if (simRunning) return;
-  simRunning = true;
-  savedCount = 0;
-  resetSimulation(false);
-
-  const btn = document.getElementById('run-btn');
-  btn.disabled = true;
-  btn.innerHTML = '<span class="spinner"></span> Running...';
-  document.getElementById('sim-status').textContent = 'Simulation running...';
-  document.getElementById('sim-status').className = 'running';
-
-  let lastPhase = 0;
-
-  const promises = events.map(ev => new Promise(resolve => {
-    setTimeout(() => {
-      if (ev.phase !== lastPhase) {
-        lastPhase = ev.phase;
-        setPhase(ev.phase);
+    let zLat, zLon;
+    if (Math.random() < 0.4) {
+      if (Math.random() < 0.5) {
+        zLat = lat + randn(0, spread);
+        zLon = lon + Math.round(randn(0, spread)/0.008)*0.008 + randn(0,0.002);
+      } else {
+        zLat = lat + Math.round(randn(0, spread)/0.008)*0.008 + randn(0,0.002);
+        zLon = lon + randn(0, spread);
       }
-      logEvent(ev.type, ev.msg);
-      if (ev.pin) showPin(ev.pin);
-      if (ev.stat) setStat(ev.stat.id, ev.stat.val);
-      if (ev.stat2) setStat(ev.stat2.id, ev.stat2.val);
-      if (ev.progress !== undefined) setProgress(ev.progress);
-      resolve();
-    }, ev.delay);
-  }));
+    } else {
+      zLat = lat + randn(0, spread);
+      zLon = lon + randn(0, spread);
+    }
 
-  await Promise.all(promises);
+    const dA = Math.sqrt((zLat-elderlyClusterA.lat)**2+(zLon-elderlyClusterA.lon)**2);
+    const dB = Math.sqrt((zLat-elderlyClusterB.lat)**2+(zLon-elderlyClusterB.lon)**2);
+    const elderlyBoost = Math.exp(-dA/0.01)*0.25 + Math.exp(-dB/0.01)*0.2;
+    const elderly = clip(randn(0.12,0.07) + (c===2?0.08:0) + elderlyBoost, 0, 0.7);
 
-  document.getElementById('ticker').classList.add('visible');
-  document.getElementById('sim-status').textContent = '✓ Simulation complete — ' + savedCount + ' residents saved to dashboard';
-  document.getElementById('sim-status').className = '';
-  btn.disabled = false;
-  btn.innerHTML = '▶ Run Again';
-  simRunning = false;
+    const gridBase = clip(randn(0.88,0.06) - c*0.09 - elderly*0.08, 0.3, 1);
+
+    return {
+      lat: zLat, lon: zLon, cluster: c,
+      mobile:  clip(randn(0.85,0.08) - c*0.05,              0.3, 1),
+      medical: clip(randn(0.85,0.07) - elderly*0.25,        0.2, 1),
+      radio:   clip(randn(0.82,0.08),                        0.3, 1),
+      grid:    gridBase,
+      elderly, population: Math.floor(Math.random()*4500+500)
+    };
+  });
 }
 
-function resetSimulation(clearLog = true) {
-  simRunning = false;
-  savedCount = 0;
-  document.querySelectorAll('.pin').forEach(p => p.classList.remove('visible'));
-  document.getElementById('ticker').classList.remove('visible');
-  setProgress(0);
-  ['stat-flagged','stat-critical','stat-shelters','stat-calls'].forEach(id => setStat(id, '0'));
-  setStat('stat-contact', '—');
-  for (let i = 1; i <= 5; i++) document.getElementById('phase-' + i).className = 'phase';
-  if (clearLog) {
-    document.getElementById('event-log').innerHTML = '<div class="ev">[ Simulation ready — press Run to begin ]</div>';
+// ══════════════════════════════════════════
+//  COMPUTE POWER
+// ══════════════════════════════════════════
+function computePower(z) {
+  return clip(z.grid * (0.4*z.mobile + 0.4*z.medical + 0.2*z.radio), 0, 1);
+}
+
+function zoneValue(z, layer) {
+  if (layer==='radio')   return z.radio;
+  if (layer==='medical') return z.medical;
+  if (layer==='mobile')  return z.mobile;
+  return computePower(z);  // default: 'power'
+}
+
+// ══════════════════════════════════════════
+//  DRAIN MODEL
+// ══════════════════════════════════════════
+let epicentre = null;
+
+function initEpicentre(zones, disaster, cityLat, cityLon) {
+  const latMean = mean(zones.map(z=>z.lat));
+  const lonMean = mean(zones.map(z=>z.lon));
+
+  if (disaster === 'Power Outage') {
+    epicentre = { lat: latMean + randn(0,0.008), lon: lonMean + randn(0,0.008) };
+  } else if (disaster === 'Heatwave') {
+    epicentre = { lat: latMean + randn(0,0.004), lon: lonMean + randn(0,0.004) };
+  } else {
+    epicentre = { lat: latMean - 0.02 + randn(0,0.005), lon: lonMean + 0.015 + randn(0,0.005) };
   }
-  document.getElementById('sim-status').textContent = 'Ready — click Run to begin';
-  document.getElementById('sim-status').className = '';
-  const btn = document.getElementById('run-btn');
-  btn.disabled = false;
-  btn.innerHTML = '▶ Run Simulation';
-  const banner = document.getElementById('map-saved-banner');
-  if (banner) banner.remove();
+  return epicentre;
 }
 
-async function delay(ms) {
-  return new Promise(r => setTimeout(r, ms));
+let floodZoneFlags = null;
+function assignFloodZones(zones) {
+  floodZoneFlags = zones.map(z => {
+    const d = Math.sqrt((z.lat-epicentre.lat)**2 + (z.lon-epicentre.lon)**2);
+    return Math.random() < Math.exp(-d/0.02) * 0.8 ? 1 : 0;
+  });
 }
+
+function drainZones(zones, disaster) {
+  const latMean = mean(zones.map(z=>z.lat));
+  const lonMean = mean(zones.map(z=>z.lon));
+  const rates = {mobile:0,medical:0,radio:0,grid:0};
+
+  zones.forEach((z,i) => {
+    const cluster = Math.exp(-((z.lat-latMean)**2+(z.lon-lonMean)**2)/0.0005);
+    const dist = Math.sqrt((z.lat-epicentre.lat)**2+(z.lon-epicentre.lon)**2);
+    const shock = Math.exp(-dist/0.022);
+
+    let dm,dmed,dr,dg;
+    if (disaster==='Power Outage') {
+      dm=0.03; dmed=0.04+0.05*z.elderly; dr=0.015; dg=0.13+0.28*cluster;
+    } else if (disaster==='Heatwave') {
+      dm=0.03+0.05*cluster; dmed=0.025+0.06*z.elderly*cluster; dr=0.015; dg=0.022;
+    } else {
+      const fz = floodZoneFlags[i];
+      dm=0.02+0.07*fz; dmed=0.02+0.06*fz; dr=0.02+0.04*fz; dg=0.07*fz;
+    }
+
+    dm  *=(1+2.0*shock); dmed*=(1+2.5*shock); dr*=(1+1.5*shock); dg*=(1+3.2*shock);
+    const ts=0.075;
+    dm*=ts; dmed*=ts; dr*=ts; dg*=ts;
+
+    z.grid -= dg;
+    const gf = clip(1-z.grid,0,1);
+    z.mobile  -= dm  *(1+gf);
+    z.medical -= dmed*(1+1.6*gf);
+    z.radio   -= dr  *(1+gf);
+    for(const k of ['mobile','medical','radio','grid']) z[k]=clip(z[k],0,1);
+
+    rates.mobile+=dm; rates.medical+=dmed; rates.radio+=dr; rates.grid+=dg;
+  });
+
+  const n=zones.length;
+  return {mobile:rates.mobile/n,medical:rates.medical/n,radio:rates.radio/n,grid:rates.grid/n};
+}
+
+// ══════════════════════════════════════════
+//  COLOR SCALE
+// ══════════════════════════════════════════
+function powerToRGB(v) {
+  const stops = [
+    [0,   [180,  10,  10]],
+    [0.20,  [240,  60,  20]],
+    [0.40, [220, 150,   0]],
+    [0.60, [180, 200,  10]],
+    [0.80, [ 60, 190,  50]],
+    [1.0,  [ 20, 160,  60]]
+  ];
+  for(let i=0;i<stops.length-1;i++){
+    const [s0,c0]=stops[i], [s1,c1]=stops[i+1];
+    if(v>=s0 && v<=s1){
+      const t=(v-s0)/(s1-s0);
+      return [
+        Math.round(c0[0]+(c1[0]-c0[0])*t),
+        Math.round(c0[1]+(c1[1]-c0[1])*t),
+        Math.round(c0[2]+(c1[2]-c0[2])*t)
+      ];
+    }
+  }
+  return [20,160,60];
+}
+
+// ══════════════════════════════════════════
+//  IDW CANVAS INTERPOLATION — overlaid on Leaflet map
+// ══════════════════════════════════════════
+const GRID_RES = 80;
+let powerOverlay = null;
+let canvasBuffer = document.createElement('canvas');
+canvasBuffer.width  = GRID_RES;
+canvasBuffer.height = GRID_RES;
+const bufCtx = canvasBuffer.getContext('2d');
+
+function renderIDW(zones, layer) {
+  if (!zones.length) return;
+
+  const lats = zones.map(z=>z.lat), lons = zones.map(z=>z.lon);
+  const latMin=Math.min(...lats)-0.006, latMax=Math.max(...lats)+0.006;
+  const lonMin=Math.min(...lons)-0.006, lonMax=Math.max(...lons)+0.006;
+
+  const imgData = bufCtx.createImageData(GRID_RES, GRID_RES);
+  const d = imgData.data;
+
+  for(let gy=0;gy<GRID_RES;gy++){
+    for(let gx=0;gx<GRID_RES;gx++){
+      const glat = latMax - (gy/GRID_RES)*(latMax-latMin);
+      const glon = lonMin + (gx/GRID_RES)*(lonMax-lonMin);
+
+      let sumW=0, sumVW=0;
+      for(let i=0;i<zones.length;i++){
+        const dz = zones[i];
+        const d2 = (dz.lat-glat)**2 + (dz.lon-glon)**2;
+        if(d2<1e-12){ sumW=1; sumVW=zoneValue(dz,layer); break; }
+        const w = 1/(d2);
+        sumW  += w;
+        sumVW += w * zoneValue(dz, layer);
+      }
+      const val = sumVW/sumW;
+      const [r,g,b] = powerToRGB(val);
+      const idx = (gy*GRID_RES+gx)*4;
+      d[idx]=r; d[idx+1]=g; d[idx+2]=b; d[idx+3]=185;
+    }
+  }
+
+  bufCtx.putImageData(imgData, 0, 0);
+  const url = canvasBuffer.toDataURL('image/png');
+  const bounds = [[latMin,lonMin],[latMax,lonMax]];
+
+  if (powerOverlay) {
+    powerOverlay.setUrl(url);
+    powerOverlay.setBounds(bounds);
+  } else {
+    powerOverlay = L.imageOverlay(url, bounds, { opacity:1, interactive:false }).addTo(map);
+  }
+}
+
+// ══════════════════════════════════════════
+//  EPICENTRE MARKER
+// ══════════════════════════════════════════
+let epicMarker = null;
+function showEpicentre(lat, lon, disaster) {
+  if (epicMarker) { epicMarker.remove(); epicMarker = null; }
+  const colors = {'Power Outage':'#f0883e','Heatwave':'#f85149','Flood':'#58a6ff'};
+  const color = colors[disaster] || '#f85149';
+  const icon = L.divIcon({
+    className:'',
+    html:`<div style="position:relative;width:24px;height:24px">
+      <div style="position:absolute;inset:0;border-radius:50%;border:2px solid ${color};animation:ripple1 1.4s infinite;opacity:0.6"></div>
+      <div style="position:absolute;inset:4px;border-radius:50%;border:2px solid ${color};animation:ripple2 1.4s infinite 0.5s;opacity:0.4"></div>
+      <div style="position:absolute;inset:8px;border-radius:50%;background:${color}"></div>
+      <style>
+        @keyframes ripple1{0%{transform:scale(1);opacity:.7}100%{transform:scale(2.5);opacity:0}}
+        @keyframes ripple2{0%{transform:scale(1);opacity:.5}100%{transform:scale(2);opacity:0}}
+      </style>
+    </div>`,
+    iconSize:[24,24], iconAnchor:[12,12]
+  });
+  epicMarker = L.marker([lat,lon],{icon,interactive:false}).addTo(map);
+}
+
+// ══════════════════════════════════════════
+//  RESIDENT MARKERS
+// ══════════════════════════════════════════
+let resMarkers = [];
+function addResidentMarker(lat, lon, res) {
+  const c = res.priority==='CRITICAL' ? '#f85149' : '#d29922';
+  const icon = L.divIcon({
+    className:'',
+    html:`<div style="width:13px;height:13px;border-radius:50%;background:${c};border:2px solid #0d1117;box-shadow:0 0 6px ${c}88"></div>`,
+    iconSize:[13,13], iconAnchor:[6,6]
+  });
+  const m = L.marker([lat,lon],{icon}).addTo(map);
+  m.bindPopup(`<b style="color:${c}">${res.name}</b><br><small>${res.priority_reason}</small><br><small style="color:#d29922">${res.time_sensitive}</small>`);
+  resMarkers.push(m);
+}
+
+// ══════════════════════════════════════════
+//  POWER TIMELINE CHART
+// ══════════════════════════════════════════
+const tlCanvas = document.getElementById('timeline-canvas');
+const tlCtx = tlCanvas.getContext('2d');
+let tlHistory = [];
+
+function drawTimeline() {
+  const W=tlCanvas.width, H=tlCanvas.height;
+  tlCtx.clearRect(0,0,W,H);
+  tlCtx.fillStyle='#0d1117'; tlCtx.fillRect(0,0,W,H);
+
+  if(tlHistory.length<2) return;
+
+  tlCtx.strokeStyle='#21262d'; tlCtx.lineWidth=0.5;
+  [0.25,0.5,0.75].forEach(y=>{
+    tlCtx.beginPath();
+    tlCtx.moveTo(0,(1-y)*(H-10)+5);
+    tlCtx.lineTo(W,(1-y)*(H-10)+5);
+    tlCtx.stroke();
+  });
+
+  tlCtx.lineWidth=2; tlCtx.lineJoin='round';
+  tlCtx.beginPath();
+  tlHistory.forEach((v,i)=>{
+    const x = (i/(Math.max(tlHistory.length-1,1)))*W;
+    const y = (1-v)*(H-10)+5;
+    i===0 ? tlCtx.moveTo(x,y) : tlCtx.lineTo(x,y);
+  });
+  const grad = tlCtx.createLinearGradient(0,0,W,0);
+  grad.addColorStop(0,'#3fb950');
+  grad.addColorStop(0.5,'#d29922');
+  grad.addColorStop(1,'#f85149');
+  tlCtx.strokeStyle=grad; tlCtx.stroke();
+
+  tlCtx.lineTo(W,H); tlCtx.lineTo(0,H); tlCtx.closePath();
+  tlCtx.fillStyle='rgba(248,81,73,0.08)'; tlCtx.fill();
+
+  const last = tlHistory[tlHistory.length-1];
+  tlCtx.fillStyle=last<0.4?'#f85149':last<0.6?'#d29922':'#3fb950';
+  tlCtx.font='bold 10px Segoe UI';
+  tlCtx.fillText((last*100).toFixed(0)+'%', W-28, 14);
+}
+
+// ══════════════════════════════════════════
+//  LOCALSTORAGE SAVE
+// ══════════════════════════════════════════
+let flaggedNames = new Set();
+let flaggedCount = 0;
+
+function savePersonFromModel(card) {
+  try {
+    const stored = JSON.parse(localStorage.getItem('dbridge_people')||'[]');
+    const idx = stored.findIndex(p=>p.name&&p.name.toLowerCase()===card.name.toLowerCase());
+    const rec = {
+      id: idx>=0 ? stored[idx].id : Date.now().toString()+Math.random().toString(36).slice(2,5),
+      name:card.name, priority:card.priority,
+      lastCallTime:null, fromMap:true,
+      mapTime:new Date().toISOString(),
+      card, callSummary:'Flagged by Power Model — '+currentDisaster+' in '+currentCity
+    };
+    if(idx>=0){rec.lastCallTime=stored[idx].lastCallTime;rec.callSummary=stored[idx].callSummary||rec.callSummary;stored[idx]=rec;}
+    else stored.unshift(rec);
+    localStorage.setItem('dbridge_people',JSON.stringify(stored));
+  } catch(e){ console.warn(e); }
+}
+
+function checkFlagging(zones) {
+  const critZones = zones.filter(z=>computePower(z)<0.40);
+  document.getElementById('s-crit').textContent = critZones.length;
+  document.getElementById('st-critical').textContent = critZones.length;
+
+  if (currentCity==='Houston') {
+    HOUSTON_RESIDENTS.forEach(res => {
+      if(flaggedNames.has(res.name)) return;
+      const rLat = CITIES['Houston'].lat+res.latOff;
+      const rLon = CITIES['Houston'].lon+res.lonOff;
+      let minD=Infinity, nearP=1;
+      zones.forEach(z=>{const d=Math.sqrt((z.lat-rLat)**2+(z.lon-rLon)**2);if(d<minD){minD=d;nearP=computePower(z);}});
+      if(nearP<0.40){
+        flaggedNames.add(res.name); flaggedCount++;
+        savePersonFromModel(res);
+        logEv('crit','⚠ FLAGGED: '+res.name+' — zone power '+Math.round(nearP*100)+'%');
+        addResidentMarker(rLat,rLon,res);
+        updateFlagBanner();
+      }
+    });
+  } else if(critZones.length>0 && flaggedCount===0) {
+    const highEld = critZones.filter(z=>z.elderly>0.22);
+    if(highEld.length>0){
+      const card={
+        name:'Vulnerable Cluster — '+currentCity, priority:'CRITICAL',
+        priority_reason:'Model flagged '+highEld.length+' critical zones with high elderly ratio',
+        medical_tags:['Elderly cluster','Power dependent','Medical equipment'],
+        alert_tags:['Power grid below 40%',''+highEld.length+' zones critical'],
+        medical_summary:''+highEld.length+' zones with elderly residents where power has dropped below safe threshold in '+currentCity+'.',
+        communication_guide:'Zone-wide outreach. Use accessible channels.',
+        immediate_actions:['Deploy welfare calls to flagged zones','Check medical equipment status','Arrange accessible shelter transport'],
+        do_not:['Ignore sub-40% power zones'],
+        resources_needed:'Medical teams, accessible transport, backup power',
+        contact:'Emergency Coordinator: 911',
+        time_sensitive:'Power degradation ongoing — act before systems reach 0'
+      };
+      flaggedCount++; flaggedNames.add(card.name);
+      savePersonFromModel(card);
+      logEv('crit','⚠ '+highEld.length+' critical vulnerable zones flagged in '+currentCity);
+      updateFlagBanner();
+    }
+  }
+  document.getElementById('st-flagged').textContent = flaggedCount;
+}
+
+function updateFlagBanner() {
+  document.getElementById('fb-title').textContent = flaggedCount+' person'+(flaggedCount!==1?'s':'')+' flagged by model';
+  document.getElementById('fb-body').textContent  = document.getElementById('st-critical').textContent+' zones below 40% power';
+  document.getElementById('flag-banner').style.display='block';
+}
+
+// ══════════════════════════════════════════
+//  UI HELPERS
+// ══════════════════════════════════════════
+function logEv(type,msg){
+  const log=document.getElementById('event-log');
+  const d=document.createElement('div'); d.className='ev '+type;
+  d.textContent='['+new Date().toLocaleTimeString('en-US',{hour12:false})+'] '+msg;
+  log.appendChild(d); log.scrollTop=log.scrollHeight;
+}
+
+function setPhase(n){
+  for(let i=1;i<=5;i++){
+    document.getElementById('ph-'+i).className='phase'+(i<n?' done':i===n?' active':'');
+  }
+}
+
+function colorBar(id, barId, val) {
+  const el=document.getElementById(id), bar=document.getElementById(barId);
+  el.textContent=val.toFixed(2);
+  el.className='sv iv '+(val<0.35?'d':val<0.6?'w':'g');
+  bar.style.width=(val*100)+'%';
+  bar.style.background=val<0.35?'#f85149':val<0.6?'#d29922':'#3fb950';
+}
+
+function updateStatusCircle(p){
+  const v=Math.pow(p,1.5);
+  const r=Math.round(200*(1-v)), g=Math.round(190*v);
+  document.getElementById('status-circle').style.background=`rgb(${r},${g},10)`;
+  document.getElementById('pwr-num').textContent=p.toFixed(3);
+}
+
+function updatePanels(zones,rates){
+  const avgP   = mean(zones.map(computePower));
+  const avgR   = mean(zones.map(z=>z.radio));
+  const avgMed = mean(zones.map(z=>z.medical));
+  const avgMob = mean(zones.map(z=>z.mobile));
+  const avgG   = mean(zones.map(z=>z.grid));
+  const totPop = zones.reduce((s,z)=>s+z.population,0);
+
+  updateStatusCircle(avgP);
+  colorBar('val-radio',  'bar-radio',  avgR);
+  colorBar('val-medical','bar-medical',avgMed);
+  colorBar('val-mobile', 'bar-mobile', avgMob);
+  colorBar('val-grid',   'bar-grid',   avgG);
+
+  document.getElementById('s-pop').textContent   = totPop.toLocaleString();
+  document.getElementById('s-zones').textContent = zones.length;
+
+  if(rates){
+    document.getElementById('dr-radio').textContent   = rates.radio.toFixed(4);
+    document.getElementById('dr-medical').textContent = rates.medical.toFixed(4);
+    document.getElementById('dr-mobile').textContent  = rates.mobile.toFixed(4);
+    document.getElementById('dr-grid').textContent    = rates.grid.toFixed(4);
+  }
+
+  tlHistory.push(avgP);
+  if(tlHistory.length>60) tlHistory.shift();
+  drawTimeline();
+}
+
+// ══════════════════════════════════════════
+//  VIEW LAYER TOGGLE
+// ══════════════════════════════════════════
+let currentView = 'power';
+const VIEW_LABELS = {
+  power:  '⚡ Power Index',
+  radio:  '📻 Radio Coverage',
+  medical:'🏥 Medical Systems',
+  mobile: '📡 Mobile Network'
+};
+const VIEW_GRADIENTS = {
+  power:  'linear-gradient(to right,#8b0000,#f85149,#e36209,#d29922,#3fb950)',
+  radio:  'linear-gradient(to right,#0f1f44,#1f6feb,#58a6ff,#3fb950)',
+  medical:'linear-gradient(to right,#4a0f6e,#7c3aed,#d29922,#3fb950)',
+  mobile: 'linear-gradient(to right,#0f3460,#1f6feb,#58a6ff,#3fb950)'
+};
+
+function setView(v){
+  currentView=v;
+  document.querySelectorAll('.vbtn').forEach(b=>b.classList.remove('active'));
+  event.target.classList.add('active');
+  document.getElementById('view-label').textContent=VIEW_LABELS[v];
+  document.getElementById('leg-bar').style.background=VIEW_GRADIENTS[v];
+  document.getElementById('leg-layer-name').textContent=VIEW_LABELS[v];
+  if(zones.length) renderIDW(zones, v);
+}
+
+// ══════════════════════════════════════════
+//  LEAFLET MAP INIT
+// ══════════════════════════════════════════
+let map;
+function initMap(cityName){
+  if(map){ map.remove(); powerOverlay=null; map=null; }
+  const city=CITIES[cityName];
+  map=L.map('leaflet-map',{zoomControl:true}).setView([city.lat,city.lon],city.zoom);
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{
+    attribution:'© OpenStreetMap © CARTO', subdomains:'abcd', maxZoom:19
+  }).addTo(map);
+}
+
+// ══════════════════════════════════════════
+//  SIMULATION STATE
+// ══════════════════════════════════════════
+let zones=[], simInterval=null, simRunning=false;
+let tick=0, startTime=null;
+let currentCity='Houston', currentDisaster='Power Outage';
+
+function toggleSim(){
+  if(simRunning){ pauseSim(); return; }
+  if(tick===0){ startSim(); } else { resumeSim(); }
+}
+
+function startSim(){
+  currentCity     = document.getElementById('city-sel').value;
+  currentDisaster = document.getElementById('dis-sel').value;
+  document.getElementById('city-sel').disabled=true;
+  document.getElementById('dis-sel').disabled=true;
+
+  const city=CITIES[currentCity];
+  zones = generateData(city.lat, city.lon, 180);
+  initEpicentre(zones, currentDisaster, city.lat, city.lon);
+  if(currentDisaster==='Flood') assignFloodZones(zones);
+
+  flaggedNames.clear(); flaggedCount=0; tick=0; startTime=Date.now(); tlHistory=[];
+  resMarkers.forEach(m=>m.remove()); resMarkers=[];
+  if(epicMarker){ epicMarker.remove(); epicMarker=null; }
+
+  initMap(currentCity);
+  renderIDW(zones, currentView);
+  updatePanels(zones, null);
+
+  document.getElementById('nav-title').textContent='🗺️ '+currentCity+' — '+currentDisaster+' Model';
+  logEv('info','Simulation started: '+currentCity+' / '+currentDisaster);
+  logEv('info',zones.length+' zones · Population: '+zones.reduce((s,z)=>s+z.population,0).toLocaleString());
+  setPhase(1);
+  document.getElementById('sim-bar').style.width='4%';
+  document.getElementById('st-shelters').textContent='0';
+  document.getElementById('st-calls').textContent='0';
+  resumeSim();
+}
+
+function resumeSim(){
+  simRunning=true;
+  document.getElementById('run-btn').innerHTML='⏸ Pause';
+  document.getElementById('sim-status').textContent='Running...';
+  document.getElementById('sim-status').className='running';
+  simInterval=setInterval(tickSim,300);
+}
+
+function pauseSim(){
+  simRunning=false; clearInterval(simInterval);
+  document.getElementById('run-btn').innerHTML='▶ Resume';
+  document.getElementById('sim-status').textContent='Paused at tick '+tick;
+  document.getElementById('sim-status').className='';
+}
+
+function tickSim(){
+  tick++;
+  document.getElementById('s-tick').textContent=tick;
+  document.getElementById('st-tick').textContent=tick;
+  document.getElementById('st-time').textContent=Math.floor((Date.now()-startTime)/1000)+'s';
+
+  const rates=drainZones(zones,currentDisaster);
+  renderIDW(zones, currentView);
+  updatePanels(zones,rates);
+  checkFlagging(zones);
+
+  if(tick===1){
+    setPhase(2);
+    showEpicentre(epicentre.lat,epicentre.lon,currentDisaster);
+    logEv('warn','⚡ Disaster onset — epicentre marked on map');
+  }
+  if(tick===4){
+    setPhase(3);
+    logEv('info','Systems degrading — radio: '+(mean(zones.map(z=>z.radio))*100).toFixed(0)+'%');
+    document.getElementById('sim-bar').style.width='30%';
+  }
+  if(tick===9){
+    setPhase(4);
+    logEv('crit','⚠ Critical threshold breached — '+document.getElementById('st-critical').textContent+' zones below 40%');
+    document.getElementById('sim-bar').style.width='58%';
+    document.getElementById('st-shelters').textContent='3';
+  }
+  if(tick===14){
+    setPhase(5);
+    logEv('ok','📞 AI welfare calls initiated for '+flaggedCount+' flagged residents');
+    document.getElementById('st-calls').textContent=Math.max(flaggedCount*3,1);
+    document.getElementById('sim-bar').style.width='78%';
+  }
+  if(tick===20){
+    document.getElementById('st-shelters').textContent='8';
+    document.getElementById('st-calls').textContent=Math.min(23,flaggedCount*5+3);
+    document.getElementById('sim-bar').style.width='94%';
+  }
+
+  const maxV=Math.max(...zones.map(z=>Math.max(z.mobile,z.medical,z.radio,z.grid)));
+  if(maxV<0.03||tick>90){
+    clearInterval(simInterval); simRunning=false;
+    document.getElementById('run-btn').innerHTML='▶ Run Again';
+    document.getElementById('sim-status').textContent='✓ Complete — '+tick+' ticks · '+flaggedCount+' people flagged';
+    document.getElementById('sim-status').className='';
+    document.getElementById('sim-bar').style.width='100%';
+    logEv('ok','✓ Simulation complete. '+flaggedCount+' people saved to dashboard.');
+    document.getElementById('city-sel').disabled=false;
+    document.getElementById('dis-sel').disabled=false;
+  }
+}
+
+function resetSim(){
+  clearInterval(simInterval); simRunning=false; tick=0; zones=[]; tlHistory=[];
+  flaggedNames.clear(); flaggedCount=0;
+  resMarkers.forEach(m=>m.remove()); resMarkers=[];
+  if(epicMarker){epicMarker.remove();epicMarker=null;}
+  if(powerOverlay){powerOverlay.remove();powerOverlay=null;}
+
+  document.getElementById('run-btn').innerHTML='▶ Run Simulation';
+  document.getElementById('sim-status').textContent='Ready — choose city & disaster, then Run';
+  document.getElementById('sim-status').className='';
+  document.getElementById('sim-bar').style.width='0%';
+  document.getElementById('city-sel').disabled=false;
+  document.getElementById('dis-sel').disabled=false;
+  document.getElementById('flag-banner').style.display='none';
+  for(let i=1;i<=5;i++) document.getElementById('ph-'+i).className='phase';
+  ['st-flagged','st-critical','st-shelters','st-calls','st-tick'].forEach(id=>document.getElementById(id).textContent='0');
+  document.getElementById('st-time').textContent='0s';
+  document.getElementById('s-crit').textContent='0';
+  document.getElementById('s-tick').textContent='0';
+  document.getElementById('pwr-num').textContent='—';
+  document.getElementById('status-circle').style.background='#30363d';
+  document.getElementById('event-log').innerHTML='<div class="ev sys">[ Simulation reset ]</div>';
+  tlCtx.clearRect(0,0,tlCanvas.width,tlCanvas.height);
+  document.getElementById('nav-title').textContent='🗺️ Power Vulnerability Map';
+  initMap(document.getElementById('city-sel').value);
+}
+
+// ══════════════════════════════════════════
+//  INIT
+// ══════════════════════════════════════════
+initMap('Houston');
 </script>
 </body>
 </html>
