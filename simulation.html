@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DisasterBridge — Risk Map</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', sans-serif; background: #0d1117; color: #e6edf3; min-height: 100vh; }
+  nav { background: #161b22; border-bottom: 1px solid #21262d; padding: 14px 24px; display: flex; align-items: center; gap: 16px; }
+  nav a { color: #58a6ff; text-decoration: none; font-size: 0.9rem; }
+  nav span { color: #484f58; }
+  nav h2 { font-size: 1rem; color: #e6edf3; margin-left: auto; margin-right: auto; }
+  .container { max-width: 1100px; margin: 0 auto; padding: 30px 20px; }
+  h1 { font-size: 1.6rem; margin-bottom: 6px; }
+  .subtitle { color: #8b949e; font-size: 0.9rem; margin-bottom: 24px; }
+  .legend { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 20px; }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 0.82rem; color: #c9d1d9; }
+  .dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+  .map { background: #1c2128; border: 1px solid #21262d; border-radius: 12px; padding: 20px; position: relative; overflow: hidden; min-height: 440px; }
+  /* Stylised grid streets */
+  .street-h { position: absolute; height: 2px; background: #21262d; left: 0; right: 0; }
+  .street-v { position: absolute; width: 2px; background: #21262d; top: 0; bottom: 0; }
+  .zone-label { position: absolute; font-size: 0.68rem; color: #484f58; text-transform: uppercase; letter-spacing: 1px; }
+  .pin { position: absolute; width: 18px; height: 18px; border-radius: 50%; border: 2px solid #0d1117; cursor: pointer; transition: transform 0.15s; display: flex; align-items: center; justify-content: center; font-size: 0.55rem; font-weight: 700; color: #fff; }
+  .pin:hover { transform: scale(1.4); z-index: 10; }
+  .tooltip { display: none; position: absolute; background: #161b22; border: 1px solid #21262d; border-radius: 8px; padding: 12px 14px; font-size: 0.82rem; width: 220px; z-index: 20; line-height: 1.6; color: #c9d1d9; pointer-events: none; }
+  .pin:hover .tooltip { display: block; top: 24px; left: 50%; transform: translateX(-50%); }
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 14px; margin-top: 24px; }
+  .stat { background: #161b22; border: 1px solid #21262d; border-radius: 10px; padding: 16px; }
+  .stat .val { font-size: 1.8rem; font-weight: 700; color: #58a6ff; }
+  .stat .lbl { font-size: 0.78rem; color: #8b949e; margin-top: 4px; }
+  .ticker { background: #161b22; border: 1px solid #f85149; border-radius: 8px; padding: 12px 16px; margin-top: 20px; font-size: 0.85rem; color: #f85149; }
+  footer-nav { display: flex; gap: 12px; margin-top: 30px; }
+  .btn { display: inline-block; padding: 10px 20px; border-radius: 8px; font-size: 0.88rem; text-decoration: none; background: #1f6feb; color: #fff; margin-top: 24px; margin-right: 10px; }
+</style>
+</head>
+<body>
+<nav>
+  <a href="index.html">← Home</a>
+  <span>/</span>
+  <h2>🗺️ Hurricane Beryl — Houston Risk Map</h2>
+</nav>
+
+<div class="container">
+  <h1>Disability Vulnerability Map</h1>
+  <p class="subtitle">Phase 1 simulation · Pre-landfall +6h · Harris County, TX · Hurricane Beryl scenario</p>
+
+  <div class="legend">
+    <div class="legend-item"><div class="dot" style="background:#f85149"></div> Critical risk — immediate outreach</div>
+    <div class="legend-item"><div class="dot" style="background:#d29922"></div> High risk — priority monitoring</div>
+    <div class="legend-item"><div class="dot" style="background:#3fb950"></div> Shelter — accessible confirmed</div>
+    <div class="legend-item"><div class="dot" style="background:#58a6ff"></div> Medical supply depot</div>
+    <div class="legend-item"><div class="dot" style="background:#bc8cff"></div> Transport pickup point</div>
+  </div>
+
+  <div class="map" id="map">
+    <!-- Streets -->
+    <div class="street-h" style="top:25%"></div>
+    <div class="street-h" style="top:50%"></div>
+    <div class="street-h" style="top:75%"></div>
+    <div class="street-v" style="left:25%"></div>
+    <div class="street-v" style="left:50%"></div>
+    <div class="street-v" style="left:75%"></div>
+
+    <div class="zone-label" style="top:6px;left:8px">Kashmere Gardens</div>
+    <div class="zone-label" style="top:6px;left:52%">Fifth Ward</div>
+    <div class="zone-label" style="top:51%;left:8px">Third Ward</div>
+    <div class="zone-label" style="top:51%;left:52%">East Downtown</div>
+
+    <!-- Critical pins -->
+    <div class="pin" style="background:#f85149;top:18%;left:12%">CR
+      <div class="tooltip"><strong>Margaret T., 74</strong><br>Oxygen dependent · Mobility aid<br>⚠️ Power outage risk in 2h<br>📞 Welfare call queued</div>
+    </div>
+    <div class="pin" style="background:#f85149;top:38%;left:20%">CR
+      <div class="tooltip"><strong>Zone 3B — 14 residents</strong><br>Deaf/HoH community block<br>⚠️ No alert reception<br>📢 Visual alert unit dispatched</div>
+    </div>
+    <div class="pin" style="background:#f85149;top:62%;left:44%">CR
+      <div class="tooltip"><strong>James R., 58</strong><br>Quadriplegic · Ventilator<br>⚠️ Caregiver absent<br>🚑 Medical team en route</div>
+    </div>
+    <div class="pin" style="background:#f85149;top:15%;left:70%">CR
+      <div class="tooltip"><strong>Aisha M., 31</strong><br>Autism spectrum · Non-verbal<br>Familiar routine disrupted<br>👩‍⚕️ Support worker contacted</div>
+    </div>
+    <div class="pin" style="background:#f85149;top:78%;left:78%">CR
+      <div class="tooltip"><strong>Flood zone overlap — 9 residents</strong><br>Wheelchair users, ground floor<br>⚠️ Evacuation order issued<br>🚐 Accessible van dispatched</div>
+    </div>
+
+    <!-- High risk -->
+    <div class="pin" style="background:#d29922;top:28%;left:55%">HI
+      <div class="tooltip"><strong>Senior block — 22 residents</strong><br>Mixed mobility / cognitive<br>📋 Monitoring hourly</div>
+    </div>
+    <div class="pin" style="background:#d29922;top:70%;left:18%">HI
+      <div class="tooltip"><strong>Group home — 8 residents</strong><br>Developmental disabilities<br>📋 Staff on standby</div>
+    </div>
+    <div class="pin" style="background:#d29922;top:44%;left:80%">HI
+      <div class="tooltip"><strong>Visual impairment cluster</strong><br>Guide dog households<br>📋 Buddy system active</div>
+    </div>
+
+    <!-- Shelters -->
+    <div class="pin" style="background:#3fb950;top:48%;left:48%">SH
+      <div class="tooltip"><strong>NRG Arena — Primary Shelter</strong><br>✓ Wheelchair accessible<br>✓ Medical bay on-site<br>✓ ASL interpreter available<br>Capacity: 800 · Current: 243</div>
+    </div>
+    <div class="pin" style="background:#3fb950;top:20%;left:35%">SH
+      <div class="tooltip"><strong>Kashmere MS Shelter</strong><br>✓ Ground floor only<br>⚠️ No generator (yet)<br>Capacity: 200 · Current: 67</div>
+    </div>
+
+    <!-- Medical depot -->
+    <div class="pin" style="background:#58a6ff;top:55%;left:62%">MD
+      <div class="tooltip"><strong>Medical Supply Depot</strong><br>Oxygen tanks · Medications<br>Portable ventilators<br>📍 2411 Leeland St</div>
+    </div>
+
+    <!-- Transport -->
+    <div class="pin" style="background:#bc8cff;top:33%;left:72%">TP
+      <div class="tooltip"><strong>Accessible Transport Hub</strong><br>3 wheelchair vans available<br>⏱ Next pickup: 14 min<br>📞 Call: 713-555-0199</div>
+    </div>
+  </div>
+
+  <div class="ticker">⚠️ LIVE ALERT: Storm surge forecast upgraded to Cat 2 levels · All Zone A residents with mobility impairments — immediate evacuation recommended · Accessible transport on-call: 713-555-0199</div>
+
+  <div class="stats">
+    <div class="stat"><div class="val">312</div><div class="lbl">Residents flagged for outreach</div></div>
+    <div class="stat"><div class="val">47</div><div class="lbl">Critical — immediate action</div></div>
+    <div class="stat"><div class="val">8</div><div class="lbl">Accessible shelters open</div></div>
+    <div class="stat"><div class="val">23</div><div class="lbl">AI welfare calls placed</div></div>
+    <div class="stat"><div class="val">94%</div><div class="lbl">Contact success rate</div></div>
+  </div>
+
+  <a class="btn" href="call.html">→ Try Call Simulator</a>
+  <a class="btn" href="card.html" style="background:#238636">→ Generate Responder Card</a>
+</div>
+</body>
+</html>

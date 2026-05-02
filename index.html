@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DisasterBridge — AI Disability Emergency Response</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', sans-serif; background: #0d1117; color: #e6edf3; min-height: 100vh; }
+  header { background: linear-gradient(135deg, #1f3a6e, #0d1117); padding: 60px 20px 40px; text-align: center; border-bottom: 1px solid #21262d; }
+  header h1 { font-size: 2.8rem; font-weight: 800; color: #58a6ff; letter-spacing: -1px; }
+  header p { font-size: 1.15rem; color: #8b949e; margin-top: 12px; max-width: 600px; margin-inline: auto; }
+  .badge { display: inline-block; background: #1f6feb33; border: 1px solid #1f6feb; color: #58a6ff; padding: 4px 12px; border-radius: 20px; font-size: 0.8rem; margin-top: 16px; }
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; max-width: 1000px; margin: 50px auto; padding: 0 20px; }
+  .card { background: #161b22; border: 1px solid #21262d; border-radius: 12px; padding: 28px; text-decoration: none; color: inherit; transition: border-color 0.2s, transform 0.2s; display: block; }
+  .card:hover { border-color: #58a6ff; transform: translateY(-3px); }
+  .card .icon { font-size: 2.2rem; margin-bottom: 14px; }
+  .card h2 { font-size: 1.1rem; color: #e6edf3; margin-bottom: 8px; }
+  .card p { font-size: 0.88rem; color: #8b949e; line-height: 1.6; }
+  .card .tag { display: inline-block; margin-top: 14px; font-size: 0.75rem; padding: 3px 10px; border-radius: 20px; }
+  .tag.no-key { background: #238636; color: #fff; }
+  .tag.needs-key { background: #b08800; color: #fff; }
+  .setup { max-width: 700px; margin: 0 auto 60px; padding: 0 20px; }
+  .setup h3 { color: #58a6ff; margin-bottom: 16px; font-size: 1rem; text-transform: uppercase; letter-spacing: 1px; }
+  .steps { background: #161b22; border: 1px solid #21262d; border-radius: 12px; padding: 24px; }
+  .step { display: flex; gap: 16px; margin-bottom: 18px; }
+  .step:last-child { margin-bottom: 0; }
+  .step-num { background: #1f6feb; color: #fff; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 700; flex-shrink: 0; margin-top: 2px; }
+  .step p { font-size: 0.9rem; color: #c9d1d9; line-height: 1.6; }
+  .step a { color: #58a6ff; }
+  footer { text-align: center; padding: 30px; color: #484f58; font-size: 0.82rem; border-top: 1px solid #21262d; }
+</style>
+</head>
+<body>
+<header>
+  <h1>🌐 DisasterBridge</h1>
+  <p>AI-powered emergency response coordination for individuals with disabilities during natural disasters.</p>
+  <span class="badge">Powered by Google Gemini</span>
+</header>
+
+<div class="cards">
+  <a class="card" href="simulation.html">
+    <div class="icon">🗺️</div>
+    <h2>Risk Map Simulation</h2>
+    <p>Hurricane Beryl scenario — real-time vulnerability mapping across Houston showing shelter accessibility, medical needs, and evacuation routes.</p>
+    <span class="tag no-key">✓ No API key needed</span>
+  </a>
+  <a class="card" href="call.html">
+    <div class="icon">📞</div>
+    <h2>Outbound Call Simulator</h2>
+    <p>AI places welfare check calls to residents with disabilities, adapts communication style, and logs responses for emergency coordinators.</p>
+    <span class="tag needs-key">🔑 Enter key in app</span>
+  </a>
+  <a class="card" href="card.html">
+    <div class="icon">🪪</div>
+    <h2>Responder Card Generator</h2>
+    <p>Generates instant responder briefing cards for individuals — medical needs, communication preferences, mobility requirements, and access notes.</p>
+    <span class="tag needs-key">🔑 Enter key in app</span>
+  </a>
+</div>
+
+<div class="setup">
+  <h3>How to use the AI demos</h3>
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">1</div>
+      <p>Get a <strong>free</strong> Gemini API key at <a href="https://aistudio.google.com/apikey" target="_blank">aistudio.google.com/apikey</a> — sign in with Google, click <em>Create API key</em>. No credit card needed.</p>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <p>Open <strong>Call Simulator</strong> or <strong>Card Generator</strong>. You'll see a key input field at the top of each page.</p>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <p>Paste your key and click <em>Save Key</em>. It stays in your browser session only — never stored anywhere, never sent to us.</p>
+    </div>
+  </div>
+</div>
+
+<footer>DisasterBridge · Built for humanitarian impact · Gemini API · Open Source</footer>
+</body>
+</html>

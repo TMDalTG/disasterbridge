@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DisasterBridge — Call Simulator</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', sans-serif; background: #0d1117; color: #e6edf3; min-height: 100vh; }
+  nav { background: #161b22; border-bottom: 1px solid #21262d; padding: 14px 24px; display: flex; align-items: center; gap: 16px; }
+  nav a { color: #58a6ff; text-decoration: none; font-size: 0.9rem; }
+  nav h2 { font-size: 1rem; color: #e6edf3; margin-left: auto; margin-right: auto; }
+  #key-banner { background: #161b22; border-bottom: 2px solid #d29922; padding: 14px 24px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  #key-banner label { font-size: 0.85rem; color: #d29922; white-space: nowrap; }
+  #key-banner input { flex: 1; min-width: 260px; background: #0d1117; border: 1px solid #30363d; border-radius: 6px; padding: 8px 12px; color: #e6edf3; font-size: 0.88rem; font-family: monospace; }
+  #key-banner button { background: #d29922; color: #0d1117; border: none; border-radius: 6px; padding: 8px 16px; font-size: 0.85rem; font-weight: 700; cursor: pointer; white-space: nowrap; }
+  #key-banner button:hover { background: #e3b341; }
+  #key-status { font-size: 0.78rem; width: 100%; color: #8b949e; }
+  #key-status.saved { color: #3fb950; }
+  .container { max-width: 860px; margin: 0 auto; padding: 30px 20px; }
+  h1 { font-size: 1.6rem; margin-bottom: 6px; }
+  .subtitle { color: #8b949e; font-size: 0.9rem; margin-bottom: 24px; }
+  .profiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; margin-bottom: 28px; }
+  .profile { background: #161b22; border: 2px solid #21262d; border-radius: 10px; padding: 16px; cursor: pointer; transition: border-color 0.15s; }
+  .profile:hover, .profile.active { border-color: #58a6ff; }
+  .profile h3 { font-size: 0.95rem; color: #e6edf3; margin-bottom: 6px; }
+  .profile p { font-size: 0.78rem; color: #8b949e; line-height: 1.5; }
+  .tag { display: inline-block; font-size: 0.7rem; padding: 2px 8px; border-radius: 12px; background: #1f3a6e; color: #58a6ff; margin-top: 8px; margin-right: 4px; }
+  .call-box { background: #161b22; border: 1px solid #21262d; border-radius: 12px; padding: 24px; }
+  .call-box h2 { font-size: 1rem; color: #8b949e; margin-bottom: 16px; text-transform: uppercase; letter-spacing: 1px; }
+  #transcript { background: #0d1117; border: 1px solid #21262d; border-radius: 8px; padding: 16px; min-height: 260px; max-height: 380px; overflow-y: auto; font-size: 0.88rem; line-height: 1.7; color: #c9d1d9; }
+  .msg { margin-bottom: 12px; }
+  .msg .who { font-weight: 700; font-size: 0.78rem; margin-bottom: 2px; }
+  .msg.ai .who { color: #58a6ff; }
+  .msg.resident .who { color: #3fb950; }
+  .msg.system .who { color: #8b949e; }
+  .msg.system { opacity: 0.7; }
+  .controls { display: flex; gap: 12px; margin-top: 16px; flex-wrap: wrap; }
+  #place-call { background: #1f6feb; color: #fff; border: none; border-radius: 8px; padding: 12px 24px; font-size: 0.9rem; font-weight: 700; cursor: pointer; }
+  #place-call:hover { background: #388bfd; }
+  #place-call:disabled { opacity: 0.4; cursor: not-allowed; }
+  #clear-btn { background: transparent; border: 1px solid #30363d; color: #8b949e; border-radius: 8px; padding: 12px 16px; font-size: 0.88rem; cursor: pointer; }
+  #clear-btn:hover { border-color: #58a6ff; color: #58a6ff; }
+  .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid #ffffff44; border-top-color: #fff; border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: middle; margin-right: 8px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+<nav>
+  <a href="index.html">← Home</a>
+  <span style="color:#484f58">/</span>
+  <h2>📞 Outbound Call Simulator</h2>
+</nav>
+
+<div id="key-banner">
+  <label>🔑 Groq API Key</label>
+  <input type="password" id="api-key-input" placeholder="Paste your key here — gsk_..." autocomplete="off" spellcheck="false">
+  <button onclick="saveKey()">Save Key</button>
+  <div id="key-status">Key stays in your browser session only. Never stored, never sent to us. Get a free key at <a href="https://console.groq.com/keys" target="_blank" style="color:#58a6ff">console.groq.com/keys</a></div>
+</div>
+
+<div class="container">
+  <h1>AI Welfare Call Simulator</h1>
+  <p class="subtitle">Select a resident profile, then place a call. The AI adapts tone, pacing, and communication style automatically.</p>
+
+  <div class="profiles">
+    <div class="profile active" onclick="selectProfile(this, 'margaret')">
+      <h3>Margaret T., 74</h3>
+      <p>Oxygen dependent, limited mobility, lives alone. Prefers slow, clear speech. Easily anxious.</p>
+      <span class="tag">Oxygen</span><span class="tag">Mobility aid</span><span class="tag">Elderly</span>
+    </div>
+    <div class="profile" onclick="selectProfile(this, 'james')">
+      <h3>James R., 58</h3>
+      <p>Quadriplegic, ventilator dependent. Caregiver absent today. Needs medical team coordination.</p>
+      <span class="tag">Ventilator</span><span class="tag">Quad</span><span class="tag">High priority</span>
+    </div>
+    <div class="profile" onclick="selectProfile(this, 'aisha')">
+      <h3>Aisha M., 31</h3>
+      <p>Autism spectrum, non-verbal. Family member is primary contact. Needs calm, routine-focused language.</p>
+      <span class="tag">ASD</span><span class="tag">Non-verbal</span><span class="tag">Family contact</span>
+    </div>
+  </div>
+
+  <div class="call-box">
+    <h2>Call Transcript</h2>
+    <div id="transcript">
+      <div class="msg system"><div class="who">SYSTEM</div>Select a resident profile above and click Place Call to begin.</div>
+    </div>
+    <div class="controls">
+      <button id="place-call" onclick="placeCall()">📞 Place Call</button>
+      <button id="clear-btn" onclick="clearTranscript()">Clear</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let currentProfile = 'margaret';
+let groqKey = '';
+
+const profiles = {
+  margaret: {
+    system: `You are an emergency AI assistant from Houston Emergency Services making a welfare check call during Hurricane Beryl. 
+You are calling Margaret Thompson, 74, who is oxygen-dependent and uses a mobility aid. She lives alone and can become anxious. 
+Speak slowly, clearly, and reassuringly. Use short sentences. Confirm her oxygen supply status, medication supply,
+and whether she wants transport to a shelter. Calm her first if distressed.
+Simulate a realistic back-and-forth call — generate BOTH your lines AND Margaret's responses, clearly labelled.
+Keep the full call to about 8-10 exchanges.`,
+    opener: 'Placing welfare check call to Margaret T., 74 — oxygen dependent, mobility aid...'
+  },
+  james: {
+    system: `You are an emergency AI assistant from Houston Emergency Services making a welfare check call during Hurricane Beryl.
+You are calling James Robinson, 58, quadriplegic and ventilator-dependent. His caregiver is absent today.
+Be efficient and professional. Confirm ventilator battery time, medication supply, and coordinate medical team arrival.
+Simulate a realistic back-and-forth call — generate BOTH your lines AND James's responses, clearly labelled.
+Keep the full call to about 8-10 exchanges.`,
+    opener: 'Placing priority medical welfare call to James R., 58 — ventilator dependent, caregiver absent...'
+  },
+  aisha: {
+    system: `You are an emergency AI assistant from Houston Emergency Services making a welfare check call during Hurricane Beryl.
+You are calling the family of Aisha Mensah, 31, who is autistic and non-verbal. Her mother answers.
+Use calm, clear language. Ask about Aisha's state, comfort items, medications, and whether they need transport to an autism-friendly shelter.
+Be empathetic to the caregiver's stress.
+Simulate a realistic back-and-forth call — generate BOTH your lines AND the mother's responses, clearly labelled.
+Keep the full call to about 8-10 exchanges.`,
+    opener: "Placing welfare call to Aisha M.'s family — autism spectrum, non-verbal, routine disruption..."
+  }
+};
+
+function saveKey() {
+  const input = document.getElementById('api-key-input');
+  groqKey = input.value.trim();
+  const status = document.getElementById('key-status');
+  if (groqKey.startsWith('gsk_') && groqKey.length > 20) {
+    input.value = '●'.repeat(12) + groqKey.slice(-4);
+    status.textContent = '✓ Key saved for this session. Ready to place calls.';
+    status.className = 'saved';
+  } else {
+    status.textContent = "⚠️ That doesn't look like a valid Groq key. Keys start with gsk_...";
+    status.className = '';
+  }
+}
+
+function selectProfile(el, name) {
+  document.querySelectorAll('.profile').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  currentProfile = name;
+}
+
+function addMsg(role, text) {
+  const t = document.getElementById('transcript');
+  const div = document.createElement('div');
+  div.className = 'msg ' + role;
+  const labels = { ai: 'AI SYSTEM', resident: 'RESIDENT', system: 'SYSTEM' };
+  div.innerHTML = '<div class="who">' + (labels[role] || role.toUpperCase()) + '</div>' + text;
+  t.appendChild(div);
+  t.scrollTop = t.scrollHeight;
+}
+
+function clearTranscript() {
+  document.getElementById('transcript').innerHTML = '<div class="msg system"><div class="who">SYSTEM</div>Select a resident profile above and click Place Call to begin.</div>';
+}
+
+async function placeCall() {
+  if (!groqKey) {
+    alert('Please enter and save your Groq API key first (see the yellow bar at the top).');
+    return;
+  }
+  const btn = document.getElementById('place-call');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>Connecting...';
+
+  const profile = profiles[currentProfile];
+  clearTranscript();
+  addMsg('system', profile.opener);
+
+  try {
+    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + groqKey
+      },
+      body: JSON.stringify({
+        model: 'llama3-8b-8192',
+        messages: [
+          { role: 'system', content: profile.system },
+          { role: 'user', content: 'Begin the welfare check call now. Format each line as "AI: [text]" or "RESIDENT: [text]". Go through the full call naturally.' }
+        ],
+        max_tokens: 1200,
+        temperature: 0.7
+      })
+    });
+
+    const data = await response.json();
+    if (data.error) throw new Error(data.error.message);
+
+    const lines = data.choices[0].message.content.split('\n').filter(l => l.trim());
+    for (const line of lines) {
+      if (/^AI:/i.test(line)) {
+        addMsg('ai', line.replace(/^AI:/i, '').trim());
+      } else if (/^(RESIDENT|MARGARET|JAMES|AISHA|MOTHER|MOM|MRS\.):/i.test(line)) {
+        addMsg('resident', line.replace(/^[^:]+:/, '').trim());
+      } else {
+        addMsg('system', line.trim());
+      }
+      await new Promise(r => setTimeout(r, 60));
+    }
+    addMsg('system', '✓ Call complete. Summary logged to coordinator dashboard.');
+  } catch (err) {
+    addMsg('system', '⚠️ Error: ' + err.message + '. Check your API key and try again.');
+  }
+
+  btn.disabled = false;
+  btn.innerHTML = '📞 Place Call';
+}
+</script>
+</body>
+</html>
