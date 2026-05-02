@@ -7,76 +7,174 @@
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: 'Segoe UI', sans-serif; background: #0d1117; color: #e6edf3; min-height: 100vh; }
-  header { background: linear-gradient(135deg, #1f3a6e, #0d1117); padding: 60px 20px 40px; text-align: center; border-bottom: 1px solid #21262d; }
-  header h1 { font-size: 2.8rem; font-weight: 800; color: #58a6ff; letter-spacing: -1px; }
-  header p { font-size: 1.15rem; color: #8b949e; margin-top: 12px; max-width: 600px; margin-inline: auto; }
-  .badge { display: inline-block; background: #1f6feb33; border: 1px solid #1f6feb; color: #58a6ff; padding: 4px 12px; border-radius: 20px; font-size: 0.8rem; margin-top: 16px; }
-  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; max-width: 1000px; margin: 50px auto; padding: 0 20px; }
-  .card { background: #161b22; border: 1px solid #21262d; border-radius: 12px; padding: 28px; text-decoration: none; color: inherit; transition: border-color 0.2s, transform 0.2s; display: block; }
-  .card:hover { border-color: #58a6ff; transform: translateY(-3px); }
-  .card .icon { font-size: 2.2rem; margin-bottom: 14px; }
-  .card h2 { font-size: 1.1rem; color: #e6edf3; margin-bottom: 8px; }
-  .card p { font-size: 0.88rem; color: #8b949e; line-height: 1.6; }
-  .card .tag { display: inline-block; margin-top: 14px; font-size: 0.75rem; padding: 3px 10px; border-radius: 20px; }
-  .tag.no-key { background: #238636; color: #fff; }
-  .tag.needs-key { background: #b08800; color: #fff; }
-  .setup { max-width: 700px; margin: 0 auto 60px; padding: 0 20px; }
-  .setup h3 { color: #58a6ff; margin-bottom: 16px; font-size: 1rem; text-transform: uppercase; letter-spacing: 1px; }
-  .steps { background: #161b22; border: 1px solid #21262d; border-radius: 12px; padding: 24px; }
-  .step { display: flex; gap: 16px; margin-bottom: 18px; }
-  .step:last-child { margin-bottom: 0; }
-  .step-num { background: #1f6feb; color: #fff; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 700; flex-shrink: 0; margin-top: 2px; }
-  .step p { font-size: 0.9rem; color: #c9d1d9; line-height: 1.6; }
+
+  /* HERO */
+  header { background: linear-gradient(135deg, #0f2444 0%, #0d1117 70%); padding: 64px 20px 48px; text-align: center; border-bottom: 1px solid #21262d; position: relative; overflow: hidden; }
+  header::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse at 60% 40%, #1f6feb18, transparent 60%); pointer-events: none; }
+  header h1 { font-size: 3rem; font-weight: 800; color: #e6edf3; letter-spacing: -1.5px; }
+  header h1 span { color: #58a6ff; }
+  header .tagline { font-size: 1.1rem; color: #8b949e; margin-top: 14px; max-width: 560px; margin-inline: auto; line-height: 1.6; }
+  .badges { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 20px; }
+  .badge { display: inline-flex; align-items: center; gap: 6px; padding: 5px 14px; border-radius: 20px; font-size: 0.78rem; font-weight: 600; border: 1px solid; }
+  .badge.groq  { background: #1a0d2e; border-color: #7c3aed44; color: #a78bfa; }
+  .badge.open  { background: #0d1a0d; border-color: #23863644; color: #3fb950; }
+  .badge.humanitarian { background: #1a0f0d; border-color: #f8514944; color: #f85149; }
+
+  /* MISSION STRIP */
+  .mission { max-width: 780px; margin: 44px auto 0; padding: 0 20px; }
+  .mission-box { background: #161b22; border: 1px solid #21262d; border-radius: 12px; padding: 22px 28px; display: flex; gap: 18px; align-items: flex-start; }
+  .mission-box .icon { font-size: 1.6rem; flex-shrink: 0; margin-top: 2px; }
+  .mission-box p { font-size: 0.9rem; color: #c9d1d9; line-height: 1.7; }
+  .mission-box strong { color: #e6edf3; }
+
+  /* TOOL CARDS */
+  .tools-section { max-width: 1060px; margin: 48px auto 0; padding: 0 20px; }
+  .tools-section h2 { font-size: 0.82rem; text-transform: uppercase; letter-spacing: 1.5px; color: #484f58; margin-bottom: 18px; }
+  .tool-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 16px; }
+  .tool-card { background: #161b22; border: 1px solid #21262d; border-radius: 14px; padding: 24px; text-decoration: none; color: inherit; display: flex; flex-direction: column; gap: 10px; transition: border-color 0.2s, transform 0.2s; }
+  .tool-card:hover { transform: translateY(-3px); }
+  .tool-card.blue:hover  { border-color: #58a6ff; }
+  .tool-card.green:hover { border-color: #3fb950; }
+  .tool-card.red:hover   { border-color: #f85149; }
+  .tool-card.purple:hover{ border-color: #bc8cff; }
+  .tool-icon { font-size: 2rem; }
+  .tool-name { font-size: 1rem; font-weight: 700; color: #e6edf3; }
+  .tool-desc { font-size: 0.82rem; color: #8b949e; line-height: 1.6; flex: 1; }
+  .tool-tag { display: inline-block; font-size: 0.7rem; padding: 3px 10px; border-radius: 20px; align-self: flex-start; font-weight: 600; }
+  .tag-free    { background: #0d2218; color: #3fb950; border: 1px solid #23863640; }
+  .tag-key     { background: #1a1500; color: #d29922; border: 1px solid #d2992240; }
+  .tag-linked  { background: #12101a; color: #bc8cff; border: 1px solid #bc8cff40; }
+
+  /* FLOW DIAGRAM */
+  .flow-section { max-width: 780px; margin: 48px auto 0; padding: 0 20px; }
+  .flow-section h2 { font-size: 0.82rem; text-transform: uppercase; letter-spacing: 1.5px; color: #484f58; margin-bottom: 18px; }
+  .flow { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; background: #161b22; border: 1px solid #21262d; border-radius: 12px; padding: 20px 24px; }
+  .flow-node { background: #0d1117; border: 1px solid #30363d; border-radius: 8px; padding: 10px 14px; font-size: 0.8rem; color: #c9d1d9; text-align: center; min-width: 120px; }
+  .flow-node .fn { font-size: 1.1rem; margin-bottom: 4px; }
+  .flow-node .fl { font-size: 0.72rem; color: #58a6ff; margin-top: 3px; }
+  .flow-arrow { color: #30363d; font-size: 1.2rem; flex-shrink: 0; }
+  .flow-node.highlight { border-color: #f85149; }
+  .flow-node.highlight .fl { color: #f85149; }
+
+  /* SETUP */
+  .setup-section { max-width: 700px; margin: 48px auto 0; padding: 0 20px; }
+  .setup-section h2 { font-size: 0.82rem; text-transform: uppercase; letter-spacing: 1.5px; color: #484f58; margin-bottom: 18px; }
+  .steps { background: #161b22; border: 1px solid #21262d; border-radius: 12px; overflow: hidden; }
+  .step { display: flex; gap: 16px; padding: 18px 22px; border-bottom: 1px solid #21262d; }
+  .step:last-child { border-bottom: none; }
+  .step-num { background: #1f6feb; color: #fff; width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.78rem; font-weight: 700; flex-shrink: 0; margin-top: 2px; }
+  .step p { font-size: 0.88rem; color: #c9d1d9; line-height: 1.6; }
   .step a { color: #58a6ff; }
-  footer { text-align: center; padding: 30px; color: #484f58; font-size: 0.82rem; border-top: 1px solid #21262d; }
+
+  /* FOOTER */
+  footer { margin-top: 60px; padding: 28px 20px; text-align: center; color: #484f58; font-size: 0.8rem; border-top: 1px solid #21262d; }
+  footer a { color: #58a6ff; text-decoration: none; }
+  footer .footer-links { display: flex; gap: 20px; justify-content: center; margin-bottom: 10px; flex-wrap: wrap; }
 </style>
 </head>
 <body>
+
 <header>
-  <h1>🌐 DisasterBridge</h1>
-  <p>AI-powered emergency response coordination for individuals with disabilities during natural disasters.</p>
-  <span class="badge">Powered by Google Gemini</span>
+  <h1>🌐 Disaster<span>Bridge</span></h1>
+  <p class="tagline">AI-powered emergency response for individuals with disabilities during natural disasters — from risk mapping to welfare calls to first responder briefings.</p>
+  <div class="badges">
+    <span class="badge groq">⚡ Powered by Groq + Llama 3.1</span>
+    <span class="badge open">✓ Open Source</span>
+    <span class="badge humanitarian">❤ Built for humanitarian impact</span>
+  </div>
 </header>
 
-<div class="cards">
-  <a class="card" href="simulation.html">
-    <div class="icon">🗺️</div>
-    <h2>Risk Map Simulation</h2>
-    <p>Hurricane Beryl scenario — real-time vulnerability mapping across Houston showing shelter accessibility, medical needs, and evacuation routes.</p>
-    <span class="tag no-key">✓ No API key needed</span>
-  </a>
-  <a class="card" href="call.html">
-    <div class="icon">📞</div>
-    <h2>Outbound Call Simulator</h2>
-    <p>AI places welfare check calls to residents with disabilities, adapts communication style, and logs responses for emergency coordinators.</p>
-    <span class="tag needs-key">🔑 Enter key in app</span>
-  </a>
-  <a class="card" href="card.html">
-    <div class="icon">🪪</div>
-    <h2>Responder Card Generator</h2>
-    <p>Generates instant responder briefing cards for individuals — medical needs, communication preferences, mobility requirements, and access notes.</p>
-    <span class="tag needs-key">🔑 Enter key in app</span>
-  </a>
+<div class="mission">
+  <div class="mission-box">
+    <div class="icon">⚠️</div>
+    <p>During natural disasters, people with disabilities face <strong>two layers of risk</strong>: immediate physical danger from the disaster itself, and loss of access to the support systems and equipment they depend on daily. DisasterBridge uses AI to close that gap — identifying who needs help, reaching them proactively, and getting the right information to first responders instantly.</p>
+  </div>
 </div>
 
-<div class="setup">
-  <h3>How to use the AI demos</h3>
+<div class="tools-section">
+  <h2>Tools</h2>
+  <div class="tool-cards">
+
+    <a class="tool-card blue" href="simulation.html">
+      <div class="tool-icon">🗺️</div>
+      <div class="tool-name">Risk Map</div>
+      <div class="tool-desc">Hurricane Beryl scenario — animated vulnerability mapping across Houston. Watch as critical residents are flagged and resources deployed in real time. Automatically saves flagged residents to the attention dashboard.</div>
+      <span class="tool-tag tag-free">✓ No API key needed</span>
+    </a>
+
+    <a class="tool-card green" href="call.html">
+      <div class="tool-icon">📞</div>
+      <div class="tool-name">Welfare Call Simulator</div>
+      <div class="tool-desc">AI dispatcher places welfare check calls to residents, adapting tone and pacing per disability profile. Auto mode or interactive — you speak as the resident. Cards are built and saved live from each call.</div>
+      <span class="tool-tag tag-key">🔑 Free Groq key needed</span>
+    </a>
+
+    <a class="tool-card red" href="card.html">
+      <div class="tool-icon">🚨</div>
+      <div class="tool-name">People Requiring Attention</div>
+      <div class="tool-desc">Central dashboard of everyone flagged by the risk map or welfare calls. View, print, and update first responder briefing cards. Cards merge and improve with each new call or manual update.</div>
+      <span class="tool-tag tag-linked">⟳ Auto-populated from calls &amp; map</span>
+    </a>
+
+  </div>
+</div>
+
+<!-- HOW IT CONNECTS -->
+<div class="flow-section">
+  <h2>How it all connects</h2>
+  <div class="flow">
+    <div class="flow-node">
+      <div class="fn">🗺️</div>
+      <div>Risk Map</div>
+      <div class="fl">flags residents</div>
+    </div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-node highlight">
+      <div class="fn">🚨</div>
+      <div>People Requiring Attention</div>
+      <div class="fl">cards stored here</div>
+    </div>
+    <div class="flow-arrow">←</div>
+    <div class="flow-node">
+      <div class="fn">📞</div>
+      <div>Welfare Calls</div>
+      <div class="fl">updates cards live</div>
+    </div>
+  </div>
+  <p style="font-size:0.78rem;color:#484f58;margin-top:10px;padding:0 4px">The dashboard is the single source of truth — the map seeds it, calls update it, responders read from it.</p>
+</div>
+
+<div class="setup-section">
+  <h2>Getting started</h2>
   <div class="steps">
     <div class="step">
       <div class="step-num">1</div>
-      <p>Get a <strong>free</strong> Gemini API key at <a href="https://aistudio.google.com/apikey" target="_blank">aistudio.google.com/apikey</a> — sign in with Google, click <em>Create API key</em>. No credit card needed.</p>
+      <p>Get a <strong>free</strong> Groq API key at <a href="https://console.groq.com/keys" target="_blank">console.groq.com/keys</a> — sign up with any email, click <em>Create API key</em>. No credit card needed.</p>
     </div>
     <div class="step">
       <div class="step-num">2</div>
-      <p>Open <strong>Call Simulator</strong> or <strong>Card Generator</strong>. You'll see a key input field at the top of each page.</p>
+      <p>Open the <strong>Risk Map</strong> and click <em>Run Simulation</em> — residents are automatically added to the People Requiring Attention dashboard as they are flagged.</p>
     </div>
     <div class="step">
       <div class="step-num">3</div>
-      <p>Paste your key and click <em>Save Key</em>. It stays in your browser session only — never stored anywhere, never sent to us.</p>
+      <p>Open <strong>Welfare Calls</strong>, paste your key in the yellow bar, and place a call. The responder card updates live and saves to the dashboard automatically.</p>
+    </div>
+    <div class="step">
+      <div class="step-num">4</div>
+      <p>Open <strong>People Requiring Attention</strong> to see everyone flagged, view or print their cards, and update details as the situation changes.</p>
     </div>
   </div>
 </div>
 
-<footer>DisasterBridge · Built for humanitarian impact · Gemini API · Open Source</footer>
+<footer>
+  <div class="footer-links">
+    <a href="simulation.html">🗺️ Risk Map</a>
+    <a href="call.html">📞 Welfare Calls</a>
+    <a href="card.html">🚨 People Requiring Attention</a>
+    <a href="https://github.com" target="_blank">GitHub</a>
+  </div>
+  DisasterBridge · Built for humanitarian impact · Open Source · Groq + Llama 3.1
+</footer>
+
 </body>
 </html>

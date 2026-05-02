@@ -217,6 +217,142 @@ const events = [
   { phase: 5, delay: 10300, type: 'ok',  msg: '✓ Simulation complete. All critical residents contacted. Resources deployed.', progress: 100 }
 ];
 
+// ─────────────────────────────────────────
+//  CARD DATA — saved to People Requiring Attention when pin appears
+// ─────────────────────────────────────────
+const pinCards = {
+  'pin-margaret': {
+    name: 'Margaret Thompson, 74',
+    priority: 'CRITICAL',
+    priority_reason: 'Oxygen dependent — power outage, ~4h supply remaining',
+    medical_tags: ['Oxygen dependent', 'Portable concentrator', 'Walker', 'Lisinopril', 'Metformin'],
+    alert_tags: ['Power outage — ~4h oxygen remaining', 'Lives alone'],
+    medical_summary: 'Oxygen dependent with ~4h battery remaining on portable concentrator. Uses walker for mobility. Daily medications: lisinopril 10mg, metformin.',
+    communication_guide: 'Hard of hearing (hearing aid). Speaks slowly. Easily anxious — use calm, reassuring tone and short sentences. No smartphone.',
+    immediate_actions: ['Confirm exact oxygen hours remaining', 'Assess willingness to evacuate', 'Arrange pet-friendly transport — has dog (Buddy)'],
+    do_not: ['Rush or pressure her', 'Suggest leaving her dog behind', 'Use complex medical jargon'],
+    resources_needed: 'Accessible transport, backup oxygen supply, pet-friendly shelter',
+    contact: 'Daughter Sarah Thompson — 713-555-0142',
+    time_sensitive: 'Oxygen ~4h remaining. Power outage ongoing since 14:00.'
+  },
+  'pin-james': {
+    name: 'James Robinson, 58',
+    priority: 'CRITICAL',
+    priority_reason: 'Ventilator dependent, caregiver absent, battery ~6h remaining',
+    medical_tags: ['Quadriplegic (C4)', 'Ventilator dependent', 'Suction every 2h', 'Baclofen', 'Lisinopril', 'Warfarin'],
+    alert_tags: ['Ventilator battery ~6h', 'Caregiver absent', 'Suction required every 2h'],
+    medical_summary: 'C4 quadriplegic, ventilator dependent with ~6h battery. Requires airway suction every 2 hours. Medications: baclofen, lisinopril, warfarin.',
+    communication_guide: 'Speaks clearly. Fully cognitively intact. Prefers direct, medical-level communication.',
+    immediate_actions: ['Dispatch medical team immediately', 'Confirm exact ventilator battery hours', 'Arrange 2-person lift and accessible transport'],
+    do_not: ['Send non-medical personnel alone', 'Delay — ventilator failure is fatal', 'Attempt transfer without 2-person minimum'],
+    resources_needed: '2-person medical team, wheelchair-accessible van, portable ventilator backup',
+    contact: 'Wife Carol Robinson — 713-555-0298 | Backup caregiver: 713-555-0100',
+    time_sensitive: 'Ventilator battery ~6h. Suction due every 2h. Warfarin timing critical.'
+  },
+  'pin-aisha': {
+    name: 'Aisha Mensah, 31',
+    priority: 'HIGH',
+    priority_reason: 'Non-verbal, autism spectrum, severe routine disruption and sensory overload',
+    medical_tags: ['Autism spectrum (non-verbal)', 'AAC device user', 'Sensory sensitivity', 'Risperidone'],
+    alert_tags: ['Do NOT address Aisha directly', 'Sensory overload — currently distressed'],
+    medical_summary: 'Non-verbal, autism spectrum. Communicates via AAC device. Extreme sensory sensitivities to noise, crowds, and bright lights. Daily risperidone.',
+    communication_guide: 'ALWAYS address mother Grace — never Aisha directly. Keep environment quiet. No sudden movements or loud sounds.',
+    immediate_actions: ['Contact mother Grace first', 'Ensure quiet, calm approach on arrival', 'Allow comfort items: headphones, fidget tools, tablet'],
+    do_not: ['Speak directly to or about Aisha within earshot', 'Make sudden movements or loud sounds', 'Restrain under any circumstances'],
+    resources_needed: 'Autism-friendly shelter (away from crowds), family unit transport',
+    contact: 'Mother Grace Mensah — 713-555-0377 | Father Emmanuel — 713-555-0388',
+    time_sensitive: 'Routine severely disrupted. Sensory overload ongoing. Shelter must be low-stimulation.'
+  },
+  'pin-zone3b': {
+    name: 'Zone 3B — Deaf/HoH Community Block',
+    priority: 'CRITICAL',
+    priority_reason: '14 Deaf/hard of hearing residents with no emergency alert reception',
+    medical_tags: ['Deaf', 'Hard of Hearing', 'No audio alert access'],
+    alert_tags: ['Standard alerts not received', 'Visual alert units needed'],
+    medical_summary: '14 residents in Zone 3B are Deaf or hard of hearing and have not received standard audio emergency alerts.',
+    communication_guide: 'Use visual communication only — written notes, SMS, or sign language. Do not rely on spoken announcements.',
+    immediate_actions: ['Deploy visual alert units to block', 'Send SMS/text alerts to all residents', 'Dispatch ASL-capable responder'],
+    do_not: ['Rely on verbal communication', 'Assume alerts have been received'],
+    resources_needed: 'Visual alert devices, ASL interpreter, accessible transport',
+    contact: 'Zone coordinator: 713-555-0211',
+    time_sensitive: 'Residents unaware of storm surge upgrade. Immediate visual notification required.'
+  },
+  'pin-flood': {
+    name: 'Flood Zone Overlap — Wheelchair Users',
+    priority: 'CRITICAL',
+    priority_reason: '9 wheelchair users on ground floor in active flood zone',
+    medical_tags: ['Mobility impairment', 'Wheelchair dependent', 'Ground floor', 'Flood zone'],
+    alert_tags: ['Active flood zone', 'Ground floor — immediate risk', 'Evacuation order issued'],
+    medical_summary: '9 residents using wheelchairs living on ground floor in a zone with storm surge overlap. Evacuation order has been issued.',
+    communication_guide: 'Speak directly and clearly. Confirm transport arrangements before arrival to avoid delays.',
+    immediate_actions: ['Dispatch accessible vans immediately', 'Confirm each resident can self-transfer or needs assistance', 'Coordinate with NRG Arena accessible shelter'],
+    do_not: ['Use standard vehicles without ramp access', 'Delay — flooding imminent'],
+    resources_needed: 'Wheelchair-accessible vans (minimum 3), ramp access, accessible shelter beds',
+    contact: 'Area coordinator: 713-555-0199',
+    time_sensitive: 'Storm surge forecast in <3h. Evacuation must be completed before surge.'
+  }
+};
+
+// ─────────────────────────────────────────
+//  SAVE PERSON TO LOCALSTORAGE
+// ─────────────────────────────────────────
+function savePersonFromMap(card) {
+  try {
+    const stored = JSON.parse(localStorage.getItem('dbridge_people') || '[]');
+    const idx = stored.findIndex(p => p.name && p.name.toLowerCase() === card.name.toLowerCase());
+    const record = {
+      id: idx >= 0 ? stored[idx].id : Date.now().toString() + Math.random().toString(36).slice(2,6),
+      name: card.name,
+      priority: card.priority || 'STANDARD',
+      lastCallTime: null,
+      fromMap: true,
+      mapTime: new Date().toISOString(),
+      card: card,
+      callSummary: 'Flagged by Risk Map simulation — Hurricane Beryl scenario'
+    };
+    if (idx >= 0) {
+      // Preserve call data if they've been called already
+      record.lastCallTime = stored[idx].lastCallTime;
+      record.callSummary = stored[idx].callSummary || record.callSummary;
+      stored[idx] = record;
+    } else {
+      stored.unshift(record);
+    }
+    localStorage.setItem('dbridge_people', JSON.stringify(stored));
+  } catch(e) {
+    console.warn('Map save failed:', e.message);
+  }
+}
+
+let savedCount = 0;
+function showPin(id) {
+  const el = document.getElementById(id);
+  if (el) el.classList.add('visible');
+  // Save to People Requiring Attention if this pin has card data
+  if (pinCards[id]) {
+    savePersonFromMap(pinCards[id]);
+    savedCount++;
+    updateSavedBanner();
+  }
+}
+
+let bannerTimeout;
+function updateSavedBanner() {
+  let b = document.getElementById('map-saved-banner');
+  if (!b) {
+    b = document.createElement('div');
+    b.id = 'map-saved-banner';
+    b.style.cssText = 'position:fixed;bottom:20px;right:20px;background:#1f3a6e;color:#58a6ff;border:1px solid #1f6feb44;padding:10px 16px;border-radius:8px;font-size:0.82rem;z-index:999;box-shadow:0 4px 12px #0008;cursor:pointer;';
+    b.onclick = () => window.location.href = 'card.html';
+    document.body.appendChild(b);
+  }
+  b.innerHTML = '🚨 <strong>' + savedCount + ' people</strong> added to Requiring Attention → <span style="text-decoration:underline">View dashboard</span>';
+  clearTimeout(bannerTimeout);
+}
+
+// ─────────────────────────────────────────
+//  SIMULATION ENGINE
+// ─────────────────────────────────────────
 function logEvent(type, msg) {
   const log = document.getElementById('event-log');
   const d = document.createElement('div');
@@ -225,11 +361,6 @@ function logEvent(type, msg) {
   d.textContent = '[' + time + '] ' + msg;
   log.appendChild(d);
   log.scrollTop = log.scrollHeight;
-}
-
-function showPin(id) {
-  const el = document.getElementById(id);
-  if (el) el.classList.add('visible');
 }
 
 function setStat(id, val) {
@@ -253,6 +384,7 @@ function setProgress(pct) {
 async function runSimulation() {
   if (simRunning) return;
   simRunning = true;
+  savedCount = 0;
   resetSimulation(false);
 
   const btn = document.getElementById('run-btn');
@@ -261,69 +393,6 @@ async function runSimulation() {
   document.getElementById('sim-status').textContent = 'Simulation running...';
   document.getElementById('sim-status').className = 'running';
 
-  let currentPhase = 0;
-
-  for (const ev of events) {
-    await delay(ev.delay - (events[events.indexOf(ev) > 0 ? events.indexOf(ev) - 1 : 0]?.delay || 0));
-
-    if (ev.phase !== currentPhase) {
-      currentPhase = ev.phase;
-      setPhase(currentPhase);
-    }
-    logEvent(ev.type, ev.msg);
-    if (ev.pin) showPin(ev.pin);
-    if (ev.stat) setStat(ev.stat.id, ev.stat.val);
-    if (ev.stat2) setStat(ev.stat2.id, ev.stat2.val);
-    if (ev.progress) setProgress(ev.progress);
-  }
-
-  // Show ticker
-  document.getElementById('ticker').classList.add('visible');
-  document.getElementById('sim-status').textContent = '✓ Simulation complete';
-  document.getElementById('sim-status').className = '';
-
-  btn.disabled = false;
-  btn.innerHTML = '▶ Run Again';
-  simRunning = false;
-}
-
-function resetSimulation(clearLog = true) {
-  simRunning = false;
-  document.querySelectorAll('.pin').forEach(p => p.classList.remove('visible'));
-  document.getElementById('ticker').classList.remove('visible');
-  setProgress(0);
-  ['stat-flagged','stat-critical','stat-shelters','stat-calls'].forEach(id => setStat(id, '0'));
-  setStat('stat-contact', '—');
-  for (let i = 1; i <= 5; i++) document.getElementById('phase-' + i).className = 'phase';
-  if (clearLog) {
-    document.getElementById('event-log').innerHTML = '<div class="ev">[ Simulation ready — press Run to begin ]</div>';
-  }
-  document.getElementById('sim-status').textContent = 'Ready — click Run to begin';
-  document.getElementById('sim-status').className = '';
-  const btn = document.getElementById('run-btn');
-  btn.disabled = false;
-  btn.innerHTML = '▶ Run Simulation';
-}
-
-// Staggered delay helper (absolute timing)
-let simStart = 0;
-async function delay(ms) {
-  return new Promise(r => setTimeout(r, ms));
-}
-
-// Override with absolute timing
-async function runSimulation() {
-  if (simRunning) return;
-  simRunning = true;
-  resetSimulation(false);
-
-  const btn = document.getElementById('run-btn');
-  btn.disabled = true;
-  btn.innerHTML = '<span class="spinner"></span> Running...';
-  document.getElementById('sim-status').textContent = 'Simulation running...';
-  document.getElementById('sim-status').className = 'running';
-
-  const startTime = Date.now();
   let lastPhase = 0;
 
   const promises = events.map(ev => new Promise(resolve => {
@@ -344,11 +413,36 @@ async function runSimulation() {
   await Promise.all(promises);
 
   document.getElementById('ticker').classList.add('visible');
-  document.getElementById('sim-status').textContent = '✓ Simulation complete';
+  document.getElementById('sim-status').textContent = '✓ Simulation complete — ' + savedCount + ' residents saved to dashboard';
   document.getElementById('sim-status').className = '';
   btn.disabled = false;
   btn.innerHTML = '▶ Run Again';
   simRunning = false;
+}
+
+function resetSimulation(clearLog = true) {
+  simRunning = false;
+  savedCount = 0;
+  document.querySelectorAll('.pin').forEach(p => p.classList.remove('visible'));
+  document.getElementById('ticker').classList.remove('visible');
+  setProgress(0);
+  ['stat-flagged','stat-critical','stat-shelters','stat-calls'].forEach(id => setStat(id, '0'));
+  setStat('stat-contact', '—');
+  for (let i = 1; i <= 5; i++) document.getElementById('phase-' + i).className = 'phase';
+  if (clearLog) {
+    document.getElementById('event-log').innerHTML = '<div class="ev">[ Simulation ready — press Run to begin ]</div>';
+  }
+  document.getElementById('sim-status').textContent = 'Ready — click Run to begin';
+  document.getElementById('sim-status').className = '';
+  const btn = document.getElementById('run-btn');
+  btn.disabled = false;
+  btn.innerHTML = '▶ Run Simulation';
+  const banner = document.getElementById('map-saved-banner');
+  if (banner) banner.remove();
+}
+
+async function delay(ms) {
+  return new Promise(r => setTimeout(r, ms));
 }
 </script>
 </body>
