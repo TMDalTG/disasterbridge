@@ -667,11 +667,54 @@ Return ONLY a valid JSON object — no markdown, no explanation:
     }
 
     renderCard(final, 'live');
+    savePersonToStorage(final);
   } catch (e) {
     console.warn('Card extraction failed:', e.message);
   }
 
   ind.classList.remove('show');
+}
+
+// ─────────────────────────────────────────
+//  PERSIST PERSON TO LOCALSTORAGE
+// ─────────────────────────────────────────
+function savePersonToStorage(card) {
+  if (!card || !card.name) return;
+  try {
+    const stored = JSON.parse(localStorage.getItem('dbridge_people') || '[]');
+    const idx = stored.findIndex(p => p.name && p.name.toLowerCase() === card.name.toLowerCase());
+    const record = {
+      id: idx >= 0 ? stored[idx].id : Date.now().toString(),
+      name: card.name,
+      priority: card.priority || 'STANDARD',
+      lastCallTime: new Date().toISOString(),
+      card: card,
+      callSummary: transcriptLines.slice(0, 6).join(' | ')
+    };
+    if (idx >= 0) {
+      stored[idx] = record;
+    } else {
+      stored.unshift(record);
+    }
+    localStorage.setItem('dbridge_people', JSON.stringify(stored));
+    showSavedBanner(card.name);
+  } catch(e) {
+    console.warn('Storage save failed:', e.message);
+  }
+}
+
+function showSavedBanner(name) {
+  let b = document.getElementById('saved-banner');
+  if (!b) {
+    b = document.createElement('div');
+    b.id = 'saved-banner';
+    b.style.cssText = 'position:fixed;bottom:20px;right:20px;background:#238636;color:#fff;padding:10px 16px;border-radius:8px;font-size:0.82rem;z-index:999;transition:opacity 0.5s;box-shadow:0 4px 12px #0008;';
+    document.body.appendChild(b);
+  }
+  b.innerHTML = '✓ <strong>' + name + '</strong> saved to People Requiring Attention';
+  b.style.opacity = '1';
+  clearTimeout(b._t);
+  b._t = setTimeout(() => { b.style.opacity = '0'; }, 3200);
 }
 
 // ─────────────────────────────────────────

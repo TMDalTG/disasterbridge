@@ -3,113 +3,235 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>DisasterBridge — Responder Card Generator</title>
+<title>DisasterBridge — People Requiring Attention</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: 'Segoe UI', sans-serif; background: #0d1117; color: #e6edf3; min-height: 100vh; }
   nav { background: #161b22; border-bottom: 1px solid #21262d; padding: 14px 24px; display: flex; align-items: center; gap: 16px; }
   nav a { color: #58a6ff; text-decoration: none; font-size: 0.9rem; }
   nav h2 { font-size: 1rem; color: #e6edf3; margin-left: auto; margin-right: auto; }
-  #key-banner { background: #161b22; border-bottom: 2px solid #d29922; padding: 14px 24px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  #key-banner { background: #161b22; border-bottom: 2px solid #d29922; padding: 12px 24px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
   #key-banner label { font-size: 0.85rem; color: #d29922; white-space: nowrap; }
-  #key-banner input { flex: 1; min-width: 260px; background: #0d1117; border: 1px solid #30363d; border-radius: 6px; padding: 8px 12px; color: #e6edf3; font-size: 0.88rem; font-family: monospace; }
-  #key-banner button { background: #d29922; color: #0d1117; border: none; border-radius: 6px; padding: 8px 16px; font-size: 0.85rem; font-weight: 700; cursor: pointer; white-space: nowrap; }
+  #key-banner input { flex: 1; min-width: 240px; background: #0d1117; border: 1px solid #30363d; border-radius: 6px; padding: 7px 11px; color: #e6edf3; font-size: 0.86rem; font-family: monospace; }
+  #key-banner button { background: #d29922; color: #0d1117; border: none; border-radius: 6px; padding: 7px 15px; font-size: 0.83rem; font-weight: 700; cursor: pointer; }
   #key-banner button:hover { background: #e3b341; }
-  #key-status { font-size: 0.78rem; width: 100%; color: #8b949e; }
+  #key-status { font-size: 0.76rem; width: 100%; color: #8b949e; }
   #key-status.saved { color: #3fb950; }
-  .container { max-width: 960px; margin: 0 auto; padding: 30px 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
-  @media(max-width: 700px) { .container { grid-template-columns: 1fr; } }
-  h1 { font-size: 1.6rem; margin-bottom: 6px; grid-column: 1/-1; }
-  .subtitle { color: #8b949e; font-size: 0.9rem; grid-column: 1/-1; }
-  .panel { background: #161b22; border: 1px solid #21262d; border-radius: 12px; padding: 22px; }
-  .panel h2 { font-size: 0.85rem; color: #8b949e; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 16px; }
-  .presets { display: flex; flex-direction: column; gap: 10px; margin-bottom: 18px; }
-  .preset { background: #0d1117; border: 1px solid #30363d; border-radius: 8px; padding: 12px 14px; cursor: pointer; font-size: 0.85rem; color: #c9d1d9; transition: border-color 0.15s; text-align: left; }
-  .preset:hover { border-color: #58a6ff; color: #58a6ff; }
-  .preset strong { display: block; margin-bottom: 3px; color: #e6edf3; }
-  label { display: block; font-size: 0.82rem; color: #8b949e; margin-bottom: 5px; margin-top: 14px; }
-  input, textarea { width: 100%; background: #0d1117; border: 1px solid #30363d; border-radius: 6px; padding: 9px 12px; color: #e6edf3; font-size: 0.88rem; font-family: inherit; }
-  textarea { min-height: 90px; resize: vertical; }
-  input:focus, textarea:focus { outline: none; border-color: #58a6ff; }
-  #generate-btn { background: #238636; color: #fff; border: none; border-radius: 8px; padding: 12px 24px; font-size: 0.9rem; font-weight: 700; cursor: pointer; width: 100%; margin-top: 18px; }
-  #generate-btn:hover { background: #2ea043; }
-  #generate-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-  #card-placeholder { color: #484f58; font-size: 0.9rem; text-align: center; padding: 60px 20px; }
-  .responder-card { background: #0d1117; border: 2px solid #238636; border-radius: 10px; padding: 20px; font-size: 0.85rem; line-height: 1.7; color: #c9d1d9; }
+
+  /* PAGE LAYOUT */
+  .page { max-width: 1300px; margin: 0 auto; padding: 24px 20px; display: grid; grid-template-columns: 300px 1fr; gap: 22px; align-items: start; }
+  @media(max-width:900px) { .page { grid-template-columns: 1fr; } }
+
+  /* ── LEFT: PEOPLE LIST ── */
+  .people-col h1 { font-size: 1.25rem; margin-bottom: 4px; }
+  .people-col .sub { font-size: 0.8rem; color: #8b949e; margin-bottom: 14px; }
+
+  .people-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
+  .person-row { background: #161b22; border: 1px solid #21262d; border-radius: 10px; padding: 12px 14px; cursor: pointer; transition: border-color 0.15s; position: relative; }
+  .person-row:hover { border-color: #30363d; }
+  .person-row.selected { border-color: #58a6ff; background: #0d1f38; }
+  .person-row.CRITICAL { border-left: 3px solid #f85149; }
+  .person-row.HIGH { border-left: 3px solid #d29922; }
+  .person-row.STANDARD { border-left: 3px solid #238636; }
+  .person-name { font-size: 0.9rem; font-weight: 600; color: #e6edf3; margin-bottom: 3px; }
+  .person-meta { font-size: 0.72rem; color: #8b949e; }
+  .person-priority { position: absolute; top: 10px; right: 10px; font-size: 0.65rem; font-weight: 700; padding: 2px 7px; border-radius: 10px; color: #fff; }
+  .person-priority.CRITICAL { background: #f85149; }
+  .person-priority.HIGH { background: #d29922; }
+  .person-priority.STANDARD { background: #238636; }
+  .person-delete { position: absolute; bottom: 8px; right: 10px; font-size: 0.65rem; color: #484f58; cursor: pointer; border: none; background: none; padding: 2px 5px; }
+  .person-delete:hover { color: #f85149; }
+
+  .empty-state { background: #161b22; border: 1px dashed #21262d; border-radius: 10px; padding: 28px 16px; text-align: center; color: #484f58; font-size: 0.82rem; line-height: 1.7; }
+  .empty-state a { color: #58a6ff; text-decoration: none; }
+
+  .add-manual-btn { width: 100%; background: transparent; border: 1px solid #30363d; border-radius: 8px; padding: 9px; font-size: 0.82rem; color: #8b949e; cursor: pointer; text-align: center; transition: border-color 0.15s; }
+  .add-manual-btn:hover { border-color: #58a6ff; color: #58a6ff; }
+  .from-call-badge { display: inline-block; font-size: 0.65rem; background: #1a3a1a; color: #3fb950; padding: 1px 6px; border-radius: 8px; margin-left: 5px; }
+
+  /* ── RIGHT: DETAIL PANEL ── */
+  .detail-col {}
+
+  /* Tab bar */
+  .tab-bar { display: flex; gap: 0; border-bottom: 1px solid #21262d; margin-bottom: 20px; }
+  .tab { padding: 9px 18px; font-size: 0.85rem; border: none; background: none; color: #8b949e; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+  .tab.active { color: #58a6ff; border-bottom-color: #58a6ff; font-weight: 600; }
+  .tab:hover:not(.active) { color: #e6edf3; }
+
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  /* ── CARD VIEW TAB ── */
+  .card-placeholder { background: #161b22; border: 1px dashed #21262d; border-radius: 12px; padding: 60px 20px; text-align: center; color: #484f58; font-size: 0.88rem; line-height: 1.8; }
+  .responder-card { background: #0d1117; border: 2px solid #238636; border-radius: 12px; padding: 20px; font-size: 0.84rem; line-height: 1.7; color: #c9d1d9; }
   .card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid #21262d; }
   .card-name { font-size: 1.2rem; font-weight: 700; color: #e6edf3; }
-  .priority { background: #f85149; color: #fff; padding: 3px 10px; border-radius: 12px; font-size: 0.72rem; font-weight: 700; }
-  .priority.med { background: #d29922; }
-  .priority.low { background: #238636; }
-  .section { margin-bottom: 14px; }
-  .section-title { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 1px; color: #58a6ff; margin-bottom: 6px; font-weight: 700; }
-  .tag { display: inline-block; background: #1f3a6e; color: #58a6ff; padding: 2px 8px; border-radius: 10px; font-size: 0.72rem; margin-right: 5px; margin-bottom: 4px; }
-  .tag.alert { background: #4a0f0f; color: #f85149; }
-  .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid #ffffff44; border-top-color: #fff; border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: middle; margin-right: 8px; }
+  .card-reason { font-size: 0.75rem; color: #8b949e; margin-top: 3px; }
+  .priority-badge { padding: 3px 10px; border-radius: 12px; font-size: 0.7rem; font-weight: 700; color: #fff; }
+  .priority-badge.CRITICAL { background: #f85149; }
+  .priority-badge.HIGH { background: #d29922; }
+  .priority-badge.STANDARD { background: #238636; }
+  .csec { margin-bottom: 14px; }
+  .csec-title { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; color: #58a6ff; margin-bottom: 6px; font-weight: 700; }
+  .csec-title.red { color: #f85149; }
+  .ctag { display: inline-block; background: #1f3a6e; color: #58a6ff; padding: 2px 7px; border-radius: 10px; font-size: 0.7rem; margin-right: 4px; margin-bottom: 3px; }
+  .ctag.alert { background: #3a0f0f; color: #f85149; }
+  .card-footer { font-size: 0.68rem; color: #484f58; margin-top: 14px; border-top: 1px solid #21262d; padding-top: 10px; }
+
+  .card-actions { display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap; }
+  .btn-print { background: #1f6feb; color: #fff; border: none; border-radius: 7px; padding: 8px 16px; font-size: 0.82rem; cursor: pointer; }
+  .btn-print:hover { background: #388bfd; }
+  .btn-update { background: #238636; color: #fff; border: none; border-radius: 7px; padding: 8px 16px; font-size: 0.82rem; cursor: pointer; }
+  .btn-update:hover { background: #2ea043; }
+  .btn-update:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* ── EDIT / ADD TAB ── */
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media(max-width:700px) { .form-grid { grid-template-columns: 1fr; } }
+  .form-group { display: flex; flex-direction: column; gap: 5px; }
+  .form-group.full { grid-column: 1/-1; }
+  .form-group label { font-size: 0.78rem; color: #8b949e; }
+  .form-group input, .form-group textarea, .form-group select {
+    background: #161b22; border: 1px solid #30363d; border-radius: 6px;
+    padding: 8px 11px; color: #e6edf3; font-size: 0.86rem; font-family: inherit;
+  }
+  .form-group textarea { min-height: 80px; resize: vertical; }
+  .form-group input:focus, .form-group textarea:focus { outline: none; border-color: #58a6ff; }
+
+  .presets-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 18px; }
+  .preset-chip { background: #161b22; border: 1px solid #30363d; border-radius: 20px; padding: 5px 13px; font-size: 0.78rem; cursor: pointer; color: #c9d1d9; }
+  .preset-chip:hover { border-color: #58a6ff; color: #58a6ff; }
+
+  #generate-btn { background: #238636; color: #fff; border: none; border-radius: 8px; padding: 11px 24px; font-size: 0.9rem; font-weight: 700; cursor: pointer; margin-top: 18px; }
+  #generate-btn:hover { background: #2ea043; }
+  #generate-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .spinner { display: inline-block; width: 13px; height: 13px; border: 2px solid #ffffff33; border-top-color: #fff; border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: middle; margin-right: 6px; }
   @keyframes spin { to { transform: rotate(360deg); } }
-  #print-btn { display: none; background: #1f6feb; color: #fff; border: none; border-radius: 6px; padding: 8px 16px; font-size: 0.82rem; cursor: pointer; margin-top: 12px; width: 100%; }
-  #print-btn:hover { background: #388bfd; }
+
+  /* ── CALL LOG TAB ── */
+  .call-log-empty { color: #484f58; font-size: 0.85rem; padding: 40px 0; text-align: center; }
+  .call-log-entry { background: #161b22; border: 1px solid #21262d; border-radius: 8px; padding: 14px 16px; margin-bottom: 10px; }
+  .call-log-time { font-size: 0.72rem; color: #58a6ff; margin-bottom: 6px; }
+  .call-log-summary { font-size: 0.82rem; color: #c9d1d9; line-height: 1.6; }
+
+  /* Update flash */
+  @keyframes flashGreen { 0% { background: #1a3a1a; } 100% { background: transparent; } }
+  .flash { animation: flashGreen 0.7s ease-out; border-radius: 6px; }
 </style>
 </head>
 <body>
 <nav>
   <a href="index.html">← Home</a>
   <span style="color:#484f58">/</span>
-  <h2>🪪 Responder Card Generator</h2>
+  <h2>🚨 People Requiring Attention</h2>
 </nav>
 
 <div id="key-banner">
   <label>🔑 Groq API Key</label>
-  <input type="password" id="api-key-input" placeholder="Paste your key here — gsk_..." autocomplete="off" spellcheck="false">
+  <input type="password" id="api-key-input" placeholder="Paste your key — gsk_..." autocomplete="off" spellcheck="false">
   <button onclick="saveKey()">Save Key</button>
-  <div id="key-status">Key stays in your browser session only. Never stored, never sent to us. Get a free key at <a href="https://console.groq.com/keys" target="_blank" style="color:#58a6ff">console.groq.com/keys</a></div>
+  <div id="key-status">Key stays in your browser session only — never stored or sent to us. Free key: <a href="https://console.groq.com/keys" target="_blank" style="color:#58a6ff">console.groq.com/keys</a></div>
 </div>
 
-<div class="container">
-  <h1>Responder Briefing Card Generator</h1>
-  <p class="subtitle">Generate an instant briefing card for first responders — medical needs, communication style, mobility requirements, and access notes.</p>
+<div class="page">
 
-  <div class="panel">
-    <h2>Resident Information</h2>
-    <div class="presets">
-      <button class="preset" onclick="fillPreset('margaret')">
-        <strong>Margaret T., 74 — Oxygen dependent</strong>
-        Lives alone · Mobility aid · Easily anxious · Power outage risk
-      </button>
-      <button class="preset" onclick="fillPreset('james')">
-        <strong>James R., 58 — Ventilator dependent</strong>
-        Quadriplegic · Caregiver absent · High medical priority
-      </button>
-      <button class="preset" onclick="fillPreset('aisha')">
-        <strong>Aisha M., 31 — Autism spectrum</strong>
-        Non-verbal · Family caregiver · Routine disruption
-      </button>
+  <!-- ═══ LEFT: PEOPLE LIST ═══ -->
+  <div class="people-col">
+    <h1>🚨 People Requiring Attention</h1>
+    <p class="sub">Populated from welfare calls. Click a person to view or update their card.</p>
+
+    <div id="people-list" class="people-list">
+      <!-- Populated by JS -->
     </div>
-    <label>Name & Age</label>
-    <input type="text" id="f-name" placeholder="e.g. Margaret Thompson, 74">
-    <label>Disability / Medical Needs</label>
-    <textarea id="f-disability" placeholder="e.g. Oxygen dependent, uses walker, takes lisinopril daily"></textarea>
-    <label>Communication Needs</label>
-    <input type="text" id="f-comms" placeholder="e.g. Hard of hearing, prefers written notes">
-    <label>Living Situation</label>
-    <input type="text" id="f-living" placeholder="e.g. Lives alone, ground floor, no car">
-    <label>Emergency Contact</label>
-    <input type="text" id="f-contact" placeholder="e.g. Daughter Sarah — 713-555-0142">
-    <label>Current Status / Notes</label>
-    <textarea id="f-notes" placeholder="e.g. Power out since 2pm, oxygen supply ~4 hours, willing to evacuate"></textarea>
-    <button id="generate-btn" onclick="generateCard()">🪪 Generate Responder Card</button>
+
+    <button class="add-manual-btn" onclick="newPerson()">+ Add Person Manually</button>
   </div>
 
-  <div class="panel" id="card-output">
-    <h2>Generated Card</h2>
-    <div id="card-placeholder">Fill in resident details and click Generate to create a responder briefing card.</div>
-    <button id="print-btn" onclick="window.print()">🖨️ Print Card</button>
+  <!-- ═══ RIGHT: DETAIL ═══ -->
+  <div class="detail-col">
+
+    <div class="tab-bar">
+      <button class="tab active" id="tab-card" onclick="switchTab('card')">📋 Responder Card</button>
+      <button class="tab" id="tab-edit" onclick="switchTab('edit')">✏️ Edit / Add</button>
+      <button class="tab" id="tab-log" onclick="switchTab('log')">📞 Call Log</button>
+    </div>
+
+    <!-- CARD TAB -->
+    <div class="tab-panel active" id="panel-card">
+      <div class="card-placeholder" id="card-placeholder">
+        Select a person from the list, or add one manually.<br>
+        Cards are automatically created when calls are completed in the <a href="call.html" style="color:#58a6ff">Call Simulator</a>.
+      </div>
+      <div id="card-display" style="display:none"></div>
+    </div>
+
+    <!-- EDIT TAB -->
+    <div class="tab-panel" id="panel-edit">
+      <div class="presets-row">
+        <span style="font-size:0.78rem;color:#8b949e;align-self:center">Quick fill:</span>
+        <button class="preset-chip" onclick="fillPreset('margaret')">Margaret T., 74</button>
+        <button class="preset-chip" onclick="fillPreset('james')">James R., 58</button>
+        <button class="preset-chip" onclick="fillPreset('aisha')">Aisha M., 31</button>
+      </div>
+      <div class="form-grid">
+        <div class="form-group full">
+          <label>Name & Age</label>
+          <input type="text" id="f-name" placeholder="e.g. Margaret Thompson, 74">
+        </div>
+        <div class="form-group full">
+          <label>Disability / Medical Needs</label>
+          <textarea id="f-disability" placeholder="e.g. Oxygen dependent, uses walker, takes lisinopril daily"></textarea>
+        </div>
+        <div class="form-group">
+          <label>Communication Needs</label>
+          <input type="text" id="f-comms" placeholder="e.g. Hard of hearing, prefers written notes">
+        </div>
+        <div class="form-group">
+          <label>Living Situation</label>
+          <input type="text" id="f-living" placeholder="e.g. Lives alone, ground floor, no car">
+        </div>
+        <div class="form-group">
+          <label>Emergency Contact</label>
+          <input type="text" id="f-contact" placeholder="e.g. Daughter Sarah — 713-555-0142">
+        </div>
+        <div class="form-group">
+          <label>Priority</label>
+          <select id="f-priority">
+            <option value="CRITICAL">CRITICAL</option>
+            <option value="HIGH">HIGH</option>
+            <option value="STANDARD" selected>STANDARD</option>
+          </select>
+        </div>
+        <div class="form-group full">
+          <label>Current Status / Notes</label>
+          <textarea id="f-notes" placeholder="e.g. Power out since 2pm, oxygen supply ~4 hours, willing to evacuate"></textarea>
+        </div>
+      </div>
+      <button id="generate-btn" onclick="generateCard()">🪪 Generate & Save Card</button>
+    </div>
+
+    <!-- CALL LOG TAB -->
+    <div class="tab-panel" id="panel-log">
+      <div id="call-log-content">
+        <div class="call-log-empty">Select a person to see their call history.</div>
+      </div>
+    </div>
+
   </div>
 </div>
 
 <script>
+// ─────────────────────────────────────────
+//  STATE
+// ─────────────────────────────────────────
 let groqKey = '';
+let people = [];       // full list from localStorage
+let selectedId = null; // currently selected person id
 
+// ─────────────────────────────────────────
+//  PRESETS
+// ─────────────────────────────────────────
 const presets = {
   margaret: {
     name: 'Margaret Thompson, 74',
@@ -117,6 +239,7 @@ const presets = {
     comms: 'Hard of hearing (wears hearing aid). Speaks slowly. Can become anxious — needs calm, reassuring tone. No smartphone.',
     living: 'Lives alone. Ground floor apartment. No personal vehicle.',
     contact: 'Daughter Sarah Thompson — 713-555-0142',
+    priority: 'CRITICAL',
     notes: 'Power outage since 14:00. Anxious about oxygen. Willing to evacuate. Has a dog (Buddy) she will not leave without.'
   },
   james: {
@@ -124,7 +247,8 @@ const presets = {
     disability: 'Quadriplegic (C4). Ventilator dependent — 6h battery remaining. Requires suction every 2h. Takes baclofen, lisinopril, warfarin.',
     comms: 'Speaks clearly. Fully cognitively intact. Prefers direct, medical communication.',
     living: 'Ground floor accessible home. Regular caregiver absent. Neighbor checking in hourly.',
-    contact: 'Wife Carol Robinson — 713-555-0298. Backup caregiver agency: 713-555-0100.',
+    contact: 'Wife Carol Robinson — 713-555-0298. Backup caregiver: 713-555-0100.',
+    priority: 'CRITICAL',
     notes: 'Ventilator battery critical in ~6h. Has wheelchair-accessible van but cannot self-transfer. Needs 2-person lift minimum.'
   },
   aisha: {
@@ -133,9 +257,199 @@ const presets = {
     comms: 'Do NOT speak directly to Aisha — address mother Grace. Keep environment calm and quiet. No sudden movements.',
     living: 'Lives with mother Grace and brother. First floor house.',
     contact: 'Mother Grace Mensah — 713-555-0377. Father Emmanuel — 713-555-0388.',
-    notes: 'Routine severely disrupted. Currently in sensory overload. Has comfort pack (headphones, fidget tools, tablet). Needs autism-friendly shelter — away from crowds. Do NOT rush or restrain.'
+    priority: 'HIGH',
+    notes: 'Routine severely disrupted. Currently in sensory overload. Has comfort pack (headphones, fidget tools, tablet). Needs autism-friendly shelter — away from crowds.'
   }
 };
+
+// ─────────────────────────────────────────
+//  KEY
+// ─────────────────────────────────────────
+function saveKey() {
+  const inp = document.getElementById('api-key-input');
+  groqKey = inp.value.trim();
+  const st = document.getElementById('key-status');
+  if (groqKey.startsWith('gsk_') && groqKey.length > 20) {
+    inp.value = '●'.repeat(12) + groqKey.slice(-4);
+    st.textContent = '✓ Key saved for this session.';
+    st.className = 'saved';
+  } else {
+    st.textContent = "⚠️ Doesn't look like a valid Groq key (should start with gsk_).";
+    st.className = '';
+  }
+}
+
+// ─────────────────────────────────────────
+//  LOCALSTORAGE
+// ─────────────────────────────────────────
+function loadPeople() {
+  try {
+    people = JSON.parse(localStorage.getItem('dbridge_people') || '[]');
+  } catch(e) {
+    people = [];
+  }
+}
+
+function savePeople() {
+  localStorage.setItem('dbridge_people', JSON.stringify(people));
+}
+
+function getPersonById(id) {
+  return people.find(p => p.id === id) || null;
+}
+
+// ─────────────────────────────────────────
+//  RENDER PEOPLE LIST
+// ─────────────────────────────────────────
+function renderPeopleList() {
+  const container = document.getElementById('people-list');
+  container.innerHTML = '';
+
+  if (!people.length) {
+    container.innerHTML = `<div class="empty-state">
+      No people saved yet.<br>
+      Complete a call in the <a href="call.html">Call Simulator</a> — cards are saved automatically at the end of each call.<br><br>
+      Or click <strong>+ Add Person Manually</strong> below.
+    </div>`;
+    return;
+  }
+
+  people.forEach(person => {
+    const row = document.createElement('div');
+    const pr = person.priority || 'STANDARD';
+    row.className = 'person-row ' + pr + (selectedId === person.id ? ' selected' : '');
+    row.onclick = () => selectPerson(person.id);
+
+    const fromCall = person.lastCallTime ? '<span class="from-call-badge">📞 from call</span>' : '';
+    const timeAgo = person.lastCallTime ? timeSince(person.lastCallTime) + ' ago' : 'Added manually';
+
+    row.innerHTML = `
+      <span class="person-priority ${pr}">${pr}</span>
+      <div class="person-name">${person.name}${fromCall}</div>
+      <div class="person-meta">${timeAgo}</div>
+      <button class="person-delete" onclick="deletePerson(event,'${person.id}')">✕ remove</button>
+    `;
+    container.appendChild(row);
+  });
+}
+
+function timeSince(isoString) {
+  const diff = Math.floor((Date.now() - new Date(isoString)) / 1000);
+  if (diff < 60) return diff + 's';
+  if (diff < 3600) return Math.floor(diff/60) + 'm';
+  if (diff < 86400) return Math.floor(diff/3600) + 'h';
+  return Math.floor(diff/86400) + 'd';
+}
+
+// ─────────────────────────────────────────
+//  SELECT PERSON
+// ─────────────────────────────────────────
+function selectPerson(id) {
+  selectedId = id;
+  renderPeopleList();
+
+  const person = getPersonById(id);
+  if (!person) return;
+
+  // Show their card
+  showCard(person.card);
+
+  // Pre-fill edit form from card data
+  prefillForm(person);
+
+  // Show call log
+  showCallLog(person);
+
+  // Switch to card tab
+  switchTab('card');
+}
+
+function prefillForm(person) {
+  const c = person.card || {};
+  document.getElementById('f-name').value = person.name || '';
+  document.getElementById('f-disability').value = c.medical_summary || '';
+  document.getElementById('f-comms').value = c.communication_guide || '';
+  document.getElementById('f-living').value = c.resources_needed || '';
+  document.getElementById('f-contact').value = c.contact || '';
+  document.getElementById('f-priority').value = c.priority || 'STANDARD';
+  document.getElementById('f-notes').value = c.time_sensitive || '';
+}
+
+// ─────────────────────────────────────────
+//  SHOW CARD
+// ─────────────────────────────────────────
+function showCard(c) {
+  if (!c) return;
+  document.getElementById('card-placeholder').style.display = 'none';
+  const display = document.getElementById('card-display');
+  display.style.display = 'block';
+
+  const pr = c.priority || 'STANDARD';
+  const medTags = (c.medical_tags || []).map(t => `<span class="ctag">${t}</span>`).join('');
+  const alertTags = (c.alert_tags || []).map(t => `<span class="ctag alert">⚠ ${t}</span>`).join('');
+  const actions = (c.immediate_actions || []).map((a,i) => `<div>${i+1}. ${a}</div>`).join('');
+  const donts = (c.do_not || []).map(d => `<div>✗ ${d}</div>`).join('');
+
+  display.innerHTML = `
+    <div class="responder-card">
+      <div class="card-header">
+        <div>
+          <div class="card-name">${c.name || '—'}</div>
+          <div class="card-reason">${c.priority_reason || ''}</div>
+        </div>
+        <span class="priority-badge ${pr}">${pr}</span>
+      </div>
+      ${alertTags ? `<div class="csec"><div class="csec-title">⚠ Alerts</div>${alertTags}</div>` : ''}
+      <div class="csec"><div class="csec-title">Medical Profile</div>${medTags}<p style="margin-top:6px">${c.medical_summary || ''}</p></div>
+      ${c.time_sensitive ? `<div class="csec"><div class="csec-title">⏱ Time Sensitive</div><span style="color:#f85149">${c.time_sensitive}</span></div>` : ''}
+      ${c.communication_guide ? `<div class="csec"><div class="csec-title">Communication Guide</div>${c.communication_guide}</div>` : ''}
+      ${actions ? `<div class="csec"><div class="csec-title">Immediate Actions</div>${actions}</div>` : ''}
+      ${donts ? `<div class="csec"><div class="csec-title red">Do NOT</div><span style="color:#f85149">${donts}</span></div>` : ''}
+      ${c.resources_needed ? `<div class="csec"><div class="csec-title">Resources Needed</div>${c.resources_needed}</div>` : ''}
+      ${c.contact ? `<div class="csec"><div class="csec-title">Emergency Contact</div>${c.contact}</div>` : ''}
+      <div class="card-footer">DisasterBridge AI · Generated ${new Date().toLocaleString()} · Authorized emergency use only</div>
+    </div>
+    <div class="card-actions">
+      <button class="btn-print" onclick="window.print()">🖨️ Print Card</button>
+      <button class="btn-update" id="update-from-form-btn" onclick="switchTab('edit')">✏️ Edit & Regenerate</button>
+    </div>
+  `;
+}
+
+// ─────────────────────────────────────────
+//  CALL LOG
+// ─────────────────────────────────────────
+function showCallLog(person) {
+  const container = document.getElementById('call-log-content');
+  if (!person.lastCallTime) {
+    container.innerHTML = '<div class="call-log-empty">No call history for this person yet.</div>';
+    return;
+  }
+  container.innerHTML = `
+    <div class="call-log-entry">
+      <div class="call-log-time">📞 ${new Date(person.lastCallTime).toLocaleString()}</div>
+      <div class="call-log-summary">${person.callSummary || 'Call completed — card updated.'}</div>
+    </div>
+  `;
+}
+
+// ─────────────────────────────────────────
+//  ADD NEW PERSON MANUALLY
+// ─────────────────────────────────────────
+function newPerson() {
+  selectedId = null;
+  renderPeopleList();
+  clearForm();
+  switchTab('edit');
+}
+
+function clearForm() {
+  ['f-name','f-disability','f-comms','f-living','f-contact','f-notes'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  document.getElementById('f-priority').value = 'STANDARD';
+}
 
 function fillPreset(name) {
   const p = presets[name];
@@ -144,28 +458,31 @@ function fillPreset(name) {
   document.getElementById('f-comms').value = p.comms;
   document.getElementById('f-living').value = p.living;
   document.getElementById('f-contact').value = p.contact;
+  document.getElementById('f-priority').value = p.priority;
   document.getElementById('f-notes').value = p.notes;
 }
 
-function saveKey() {
-  const input = document.getElementById('api-key-input');
-  groqKey = input.value.trim();
-  const status = document.getElementById('key-status');
-  if (groqKey.startsWith('gsk_') && groqKey.length > 20) {
-    input.value = '●'.repeat(12) + groqKey.slice(-4);
-    status.textContent = '✓ Key saved for this session. Ready to generate cards.';
-    status.className = 'saved';
-  } else {
-    status.textContent = "⚠️ That doesn't look like a valid Groq key. Keys start with gsk_...";
-    status.className = '';
+// ─────────────────────────────────────────
+//  DELETE
+// ─────────────────────────────────────────
+function deletePerson(e, id) {
+  e.stopPropagation();
+  if (!confirm('Remove this person from the list?')) return;
+  people = people.filter(p => p.id !== id);
+  savePeople();
+  if (selectedId === id) {
+    selectedId = null;
+    document.getElementById('card-placeholder').style.display = 'block';
+    document.getElementById('card-display').style.display = 'none';
   }
+  renderPeopleList();
 }
 
+// ─────────────────────────────────────────
+//  GENERATE CARD (AI)
+// ─────────────────────────────────────────
 async function generateCard() {
-  if (!groqKey) {
-    alert('Please enter and save your Groq API key first (see the yellow bar at the top).');
-    return;
-  }
+  if (!groqKey) { alert('Please enter and save your Groq API key first.'); return; }
   const name = document.getElementById('f-name').value.trim();
   if (!name) { alert('Please enter the resident name.'); return; }
 
@@ -173,97 +490,102 @@ async function generateCard() {
   btn.disabled = true;
   btn.innerHTML = '<span class="spinner"></span>Generating...';
 
-  const prompt = `You are an emergency coordination AI. Generate a structured first responder briefing card.
+  // Get existing card data if updating an existing person
+  const existing = selectedId ? getPersonById(selectedId) : null;
+  const existingCard = existing ? existing.card : null;
+
+  const mergeNote = existingCard
+    ? `\nNOTE: This person already has a card. Merge and improve — do not discard existing information unless the new details contradict it.`
+    : '';
+
+  const prompt = `You are an emergency coordination AI. Generate a structured first responder briefing card.${mergeNote}
 
 Resident: ${name}
 Disability/Medical: ${document.getElementById('f-disability').value}
 Communication needs: ${document.getElementById('f-comms').value}
-Living situation: ${document.getElementById('f-living').value}
+Living/Resources: ${document.getElementById('f-living').value}
 Emergency contact: ${document.getElementById('f-contact').value}
-Current status: ${document.getElementById('f-notes').value}
+Priority level: ${document.getElementById('f-priority').value}
+Current status/notes: ${document.getElementById('f-notes').value}
+${existingCard ? '\nPrevious card data to merge with:\n' + JSON.stringify(existingCard, null, 2) : ''}
 
-Return ONLY a valid JSON object — no markdown, no explanation, no code fences. Just raw JSON:
+Return ONLY raw JSON — no markdown, no fences:
 {
   "name": "full name and age",
   "priority": "CRITICAL or HIGH or STANDARD",
-  "priority_reason": "one sentence why",
-  "medical_tags": ["tag1", "tag2"],
-  "alert_tags": ["urgent alert 1"],
+  "priority_reason": "one sentence",
+  "medical_tags": ["tag1","tag2"],
+  "alert_tags": ["urgent alert if any"],
   "medical_summary": "2-3 sentence medical briefing",
   "communication_guide": "2-3 sentence communication guide",
-  "immediate_actions": ["action 1", "action 2", "action 3"],
-  "do_not": ["thing to avoid 1", "thing to avoid 2"],
-  "resources_needed": "equipment or personnel needed",
+  "immediate_actions": ["action 1","action 2","action 3"],
+  "do_not": ["avoid 1","avoid 2"],
+  "resources_needed": "equipment or personnel",
   "contact": "name and number",
-  "time_sensitive": "any time-critical factor"
+  "time_sensitive": "time-critical factor or null"
 }`;
 
   try {
-    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + groqKey
-      },
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + groqKey },
       body: JSON.stringify({
         model: 'llama-3.1-8b-instant',
         messages: [{ role: 'user', content: prompt }],
-        max_tokens: 1000,
-        temperature: 0.3
+        max_tokens: 1000, temperature: 0.3
       })
     });
-
-    const data = await response.json();
+    const data = await res.json();
     if (data.error) throw new Error(data.error.message);
 
-    let text = data.choices[0].message.content;
-    text = text.replace(/```json|```/g, '').trim();
+    let text = data.choices[0].message.content.replace(/```json|```/g, '').trim();
     const card = JSON.parse(text);
-    renderCard(card);
-  } catch (err) {
-    document.getElementById('card-placeholder').innerHTML = '<span style="color:#f85149">⚠️ Error: ' + err.message + '<br>Check your API key and try again.</span>';
-    document.getElementById('card-placeholder').style.display = 'block';
+
+    // Save to list
+    const idx = people.findIndex(p => p.id === selectedId);
+    const record = {
+      id: selectedId || Date.now().toString(),
+      name: card.name,
+      priority: card.priority || 'STANDARD',
+      lastCallTime: existing ? existing.lastCallTime : null,
+      card: card,
+      callSummary: existing ? existing.callSummary : null
+    };
+
+    if (idx >= 0) {
+      people[idx] = record;
+    } else {
+      people.unshift(record);
+      selectedId = record.id;
+    }
+    savePeople();
+    renderPeopleList();
+    showCard(card);
+    switchTab('card');
+
+  } catch(err) {
+    alert('Error generating card: ' + err.message);
   }
 
   btn.disabled = false;
-  btn.innerHTML = '🪪 Generate Responder Card';
+  btn.innerHTML = '🪪 Generate & Save Card';
 }
 
-function renderCard(c) {
-  const priorityClass = c.priority === 'CRITICAL' ? '' : c.priority === 'HIGH' ? 'med' : 'low';
-  const medTags = (c.medical_tags || []).map(t => '<span class="tag">' + t + '</span>').join('');
-  const alertTags = (c.alert_tags || []).map(t => '<span class="tag alert">⚠ ' + t + '</span>').join('');
-  const actions = (c.immediate_actions || []).map((a, i) => '<div>' + (i+1) + '. ' + a + '</div>').join('');
-  const donts = (c.do_not || []).map(d => '<div>✗ ' + d + '</div>').join('');
-
-  document.getElementById('card-placeholder').style.display = 'none';
-  const output = document.getElementById('card-output');
-  const existing = output.querySelector('.responder-card');
-  if (existing) existing.remove();
-
-  const div = document.createElement('div');
-  div.className = 'responder-card';
-  div.innerHTML = `
-    <div class="card-header">
-      <div>
-        <div class="card-name">${c.name}</div>
-        <div style="font-size:0.78rem;color:#8b949e;margin-top:3px">${c.priority_reason}</div>
-      </div>
-      <span class="priority ${priorityClass}">${c.priority}</span>
-    </div>
-    ${alertTags ? '<div class="section"><div class="section-title">⚠ Alerts</div>' + alertTags + '</div>' : ''}
-    <div class="section"><div class="section-title">Medical Profile</div>${medTags}<p style="margin-top:8px">${c.medical_summary}</p></div>
-    <div class="section"><div class="section-title">⏱ Time Sensitive</div><span style="color:#f85149">${c.time_sensitive}</span></div>
-    <div class="section"><div class="section-title">Communication Guide</div>${c.communication_guide}</div>
-    <div class="section"><div class="section-title">Immediate Actions</div>${actions}</div>
-    <div class="section"><div class="section-title" style="color:#f85149">Do NOT</div><span style="color:#f85149">${donts}</span></div>
-    <div class="section"><div class="section-title">Resources Needed</div>${c.resources_needed}</div>
-    <div class="section"><div class="section-title">Emergency Contact</div>${c.contact}</div>
-    <div style="font-size:0.7rem;color:#484f58;margin-top:14px;border-top:1px solid #21262d;padding-top:10px">Generated by DisasterBridge AI · ${new Date().toLocaleString()} · Authorized emergency use only</div>
-  `;
-  output.appendChild(div);
-  document.getElementById('print-btn').style.display = 'block';
+// ─────────────────────────────────────────
+//  TABS
+// ─────────────────────────────────────────
+function switchTab(name) {
+  ['card','edit','log'].forEach(t => {
+    document.getElementById('tab-' + t).classList.toggle('active', t === name);
+    document.getElementById('panel-' + t).classList.toggle('active', t === name);
+  });
 }
+
+// ─────────────────────────────────────────
+//  INIT
+// ─────────────────────────────────────────
+loadPeople();
+renderPeopleList();
 </script>
 </body>
 </html>
