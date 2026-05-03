@@ -591,6 +591,7 @@ function zoneValue(z, layer) {
 // ══════════════════════════════════════════
 let disasterParams = {};
 let simSeed = 0;
+let epicentre = null;
 
 function randomizeDisaster(disaster, zones) {
   const latMean = mean(zones.map(z=>z.lat));
