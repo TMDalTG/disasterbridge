@@ -101,6 +101,30 @@ nav h2 { font-size: 0.95rem; color: #e6edf3; margin-inline: auto; }
 /* Timeline chart */
 #timeline-canvas { width: 100%; height: 70px; border-radius: 6px; background: #0d1117; border: 1px solid #21262d; display: block; }
 
+/* Groq key banner */
+#key-banner { background: #161b22; border-bottom: 2px solid #d29922; padding: 10px 20px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+#key-banner label { font-size: 0.8rem; color: #d29922; white-space: nowrap; }
+#key-banner input { flex: 1; min-width: 220px; background: #0d1117; border: 1px solid #30363d; border-radius: 6px; padding: 6px 10px; color: #e6edf3; font-size: 0.82rem; font-family: monospace; }
+#key-banner button { background: #d29922; color: #0d1117; border: none; border-radius: 6px; padding: 6px 13px; font-size: 0.8rem; font-weight: 700; cursor: pointer; }
+#key-status { font-size: 0.72rem; color: #8b949e; }
+#key-status.saved { color: #3fb950; }
+
+/* AI Triage panel */
+.ai-triage { background: #0d1117; border: 1px solid #21262d; border-radius: 8px; padding: 10px 12px; margin-top: 0; }
+.ai-triage .triage-title { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 1px; color: #484f58; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+.triage-entry { border-left: 2px solid #30363d; padding: 6px 0 6px 10px; margin-bottom: 8px; font-size: 0.72rem; line-height: 1.5; }
+.triage-entry.CRITICAL { border-color: #f85149; }
+.triage-entry.HIGH { border-color: #d29922; }
+.triage-entry.STANDARD { border-color: #3fb950; }
+.triage-entry .te-name { font-weight: 700; color: #e6edf3; margin-bottom: 2px; }
+.triage-entry .te-rank { font-size: 0.65rem; color: #58a6ff; }
+.triage-entry .te-reason { color: #8b949e; font-size: 0.7rem; }
+.triage-entry .te-calling { color: #3fb950; font-size: 0.68rem; }
+.triage-empty { font-size: 0.74rem; color: #484f58; text-align: center; padding: 12px 0; }
+
+/* Randomizer badge */
+.seed-badge { font-size: 0.66rem; color: #484f58; background: #21262d; border-radius: 4px; padding: 2px 6px; font-family: monospace; }
+
 /* Flagged banner */
 #flag-banner { display: none; position: fixed; bottom: 20px; right: 20px; background: #1a1a2e; color: #58a6ff; border: 1px solid #1f6feb55; padding: 12px 16px; border-radius: 10px; font-size: 0.8rem; z-index: 9999; box-shadow: 0 4px 20px #0009; cursor: pointer; max-width: 250px; line-height: 1.6; }
 #flag-banner strong { display: block; color: #e6edf3; margin-bottom: 2px; font-size: 0.88rem; }
@@ -126,7 +150,12 @@ nav h2 { font-size: 0.95rem; color: #e6edf3; margin-inline: auto; }
   <h2 id="nav-title">🗺️ Power Vulnerability Map</h2>
 </nav>
 
-<div class="page">
+<div id="key-banner">
+  <label>🔑 Groq Key <span style="font-weight:400;color:#8b949e">(for AI triage)</span></label>
+  <input type="password" id="api-key-input" placeholder="gsk_... — paste for live AI call prioritisation" autocomplete="off" spellcheck="false">
+  <button onclick="saveKey()">Save</button>
+  <span id="key-status">Optional — map runs without key. AI triage requires it. Free at <a href="https://console.groq.com/keys" target="_blank" style="color:#58a6ff">console.groq.com/keys</a></span>
+</div>
 
 <!-- ══════ LEFT ══════ -->
 <div class="lp">
@@ -276,7 +305,7 @@ nav h2 { font-size: 0.95rem; color: #e6edf3; margin-inline: auto; }
   <div style="font-size:0.62rem;color:#484f58;text-align:center">Avg power over simulation ticks</div>
 
   <div class="divider"></div>
-  <h3>Simulation</h3>
+  <h3>Simulation <span class="seed-badge" id="seed-badge">seed —</span></h3>
   <div class="big-stat">
     <div class="bv" id="st-tick">0</div>
     <div class="bl">Ticks elapsed</div>
@@ -284,6 +313,17 @@ nav h2 { font-size: 0.95rem; color: #e6edf3; margin-inline: auto; }
   <div class="big-stat">
     <div class="bv" id="st-time">0s</div>
     <div class="bl">Real time</div>
+  </div>
+
+  <div class="divider"></div>
+  <h3>🤖 AI Triage Queue</h3>
+  <div class="ai-triage">
+    <div class="triage-title" id="triage-title">
+      <span>Waiting for critical threshold...</span>
+    </div>
+    <div id="triage-list">
+      <div class="triage-empty">AI will rank flagged people by priority when zones go critical</div>
+    </div>
   </div>
 </div>
 
@@ -304,6 +344,35 @@ nav h2 { font-size: 0.95rem; color: #e6edf3; margin-inline: auto; }
 <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.js"></script>
 <script>
 'use strict';
+
+// ══════════════════════════════════════════
+//  GROQ KEY
+// ══════════════════════════════════════════
+let groqKey = '';
+function saveKey() {
+  const inp = document.getElementById('api-key-input');
+  groqKey = inp.value.trim();
+  const st = document.getElementById('key-status');
+  if (groqKey.startsWith('gsk_') && groqKey.length > 20) {
+    inp.value = '●'.repeat(10) + groqKey.slice(-4);
+    st.textContent = '✓ Key saved — AI triage enabled';
+    st.className = 'saved';
+  } else {
+    st.textContent = '⚠️ Invalid key (should start with gsk_)';
+    st.className = '';
+  }
+}
+
+async function callGroq(messages, maxTokens=600) {
+  const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + groqKey },
+    body: JSON.stringify({ model: 'llama-3.1-8b-instant', messages, max_tokens: maxTokens, temperature: 0.4 })
+  });
+  const data = await res.json();
+  if (data.error) throw new Error(data.error.message);
+  return data.choices[0].message.content.trim();
+}
 
 // ══════════════════════════════════════════
 //  CITIES
@@ -517,29 +586,73 @@ function zoneValue(z, layer) {
 }
 
 // ══════════════════════════════════════════
-//  DRAIN MODEL
+//  DISASTER RANDOMIZER
+//  Each run gets unique params — stored in disasterParams
 // ══════════════════════════════════════════
-let epicentre = null;
+let disasterParams = {};
+let simSeed = 0;
 
-function initEpicentre(zones, disaster, cityLat, cityLon) {
+function randomizeDisaster(disaster, zones) {
   const latMean = mean(zones.map(z=>z.lat));
   const lonMean = mean(zones.map(z=>z.lon));
+  simSeed = Math.floor(Math.random()*99999);
+  document.getElementById('seed-badge').textContent = 'seed ' + simSeed;
 
   if (disaster === 'Power Outage') {
-    epicentre = { lat: latMean + randn(0,0.008), lon: lonMean + randn(0,0.008) };
+    // Random number of failing substations (1–3), each with its own severity
+    const numSubstations = Math.floor(Math.random()*3) + 1;
+    const substations = Array.from({length: numSubstations}, () => ({
+      lat: latMean + randn(0, 0.012),
+      lon: lonMean + randn(0, 0.012),
+      severity: Math.random() * 0.6 + 0.4,   // 0.4–1.0
+      radius:   Math.random() * 0.015 + 0.008 // blast radius
+    }));
+    const cascadeStrength = Math.random() * 0.4 + 0.2;  // 0.2–0.6
+    const elderlyMedMultiplier = Math.random() * 0.04 + 0.03;
+    epicentre = substations[0];
+    disasterParams = { substations, cascadeStrength, elderlyMedMultiplier,
+      label: numSubstations + ' substation' + (numSubstations>1?'s':'')+' failing · cascade factor '+cascadeStrength.toFixed(2) };
+
   } else if (disaster === 'Heatwave') {
-    epicentre = { lat: latMean + randn(0,0.004), lon: lonMean + randn(0,0.004) };
-  } else {
-    epicentre = { lat: latMean - 0.02 + randn(0,0.005), lon: lonMean + 0.015 + randn(0,0.005) };
+    // Random heat island intensity + wind direction
+    const intensity   = Math.random() * 0.5 + 0.5;     // 0.5–1.0
+    const windAngle   = Math.random() * 2 * Math.PI;    // random direction
+    const windStrength= Math.random() * 0.4 + 0.1;      // drift strength
+    const heatRadius  = Math.random() * 0.02 + 0.015;
+    const heatCentre  = { lat: latMean + randn(0,0.006), lon: lonMean + randn(0,0.006) };
+    epicentre = heatCentre;
+    disasterParams = { heatCentre, intensity, windAngle, windStrength, heatRadius,
+      label: 'Intensity '+intensity.toFixed(2)+' · wind '+Math.round(windAngle*180/Math.PI)+'°' };
+
+  } else { // Flood
+    // 1–2 breach points, with a directional flood wave
+    const numBreaches = Math.random() < 0.4 ? 2 : 1;
+    const floodAngle  = Math.random() * 2 * Math.PI;
+    const floodSpeed  = Math.random() * 0.008 + 0.005;
+    const breaches    = Array.from({length: numBreaches}, () => ({
+      lat: latMean - 0.018 + randn(0,0.008),
+      lon: lonMean + 0.012 + randn(0,0.008),
+      severity: Math.random() * 0.5 + 0.5
+    }));
+    epicentre = breaches[0];
+    disasterParams = { breaches, floodAngle, floodSpeed, numBreaches,
+      label: numBreaches+' breach'+(numBreaches>1?'es':'')+' · wave dir '+Math.round(floodAngle*180/Math.PI)+'°' };
   }
+
+  logEv('info', '🎲 Randomized: ' + disasterParams.label);
   return epicentre;
 }
 
 let floodZoneFlags = null;
 function assignFloodZones(zones) {
+  const { breaches, floodSpeed } = disasterParams;
   floodZoneFlags = zones.map(z => {
-    const d = Math.sqrt((z.lat-epicentre.lat)**2 + (z.lon-epicentre.lon)**2);
-    return Math.random() < Math.exp(-d/0.02) * 0.8 ? 1 : 0;
+    let prob = 0;
+    breaches.forEach(b => {
+      const d = Math.sqrt((z.lat-b.lat)**2+(z.lon-b.lon)**2);
+      prob = Math.max(prob, Math.exp(-d/(floodSpeed*6)) * b.severity);
+    });
+    return Math.random() < prob ? 1 : 0;
   });
 }
 
@@ -549,36 +662,64 @@ function drainZones(zones, disaster) {
   const rates = {mobile:0,medical:0,radio:0,grid:0};
 
   zones.forEach((z,i) => {
-    const cluster = Math.exp(-((z.lat-latMean)**2+(z.lon-lonMean)**2)/0.0005);
-    const dist = Math.sqrt((z.lat-epicentre.lat)**2+(z.lon-epicentre.lon)**2);
-    const shock = Math.exp(-dist/0.022);
+    let dm=0, dmed=0, dr=0, dg=0;
 
-    let dm,dmed,dr,dg;
-    if (disaster==='Power Outage') {
-      dm=0.03; dmed=0.04+0.05*z.elderly; dr=0.015; dg=0.13+0.28*cluster;
-    } else if (disaster==='Heatwave') {
-      dm=0.03+0.05*cluster; dmed=0.025+0.06*z.elderly*cluster; dr=0.015; dg=0.022;
-    } else {
+    if (disaster === 'Power Outage') {
+      const { substations, cascadeStrength, elderlyMedMultiplier } = disasterParams;
+      // Each substation contributes based on proximity and severity
+      substations.forEach(sub => {
+        const dist = Math.sqrt((z.lat-sub.lat)**2+(z.lon-sub.lon)**2);
+        const shock = Math.exp(-dist/sub.radius) * sub.severity;
+        dg   += (0.10 + 0.22*shock);
+        dm   += (0.025 + 0.04*shock);
+        dmed += (0.030 + 0.05*shock + elderlyMedMultiplier*z.elderly);
+        dr   += (0.012 + 0.018*shock);
+      });
+      // Cascade: grid loss accelerates medical loss
+      const gf = clip(1-z.grid, 0, 1);
+      dmed += cascadeStrength * gf * 0.08;
+
+    } else if (disaster === 'Heatwave') {
+      const { heatCentre, intensity, windAngle, windStrength, heatRadius } = disasterParams;
+      // Wind drift offsets the heat centre
+      const driftLat = Math.sin(windAngle) * windStrength * 0.01;
+      const driftLon = Math.cos(windAngle) * windStrength * 0.01;
+      const dist = Math.sqrt((z.lat-(heatCentre.lat+driftLat))**2+(z.lon-(heatCentre.lon+driftLon))**2);
+      const heat = Math.exp(-dist/heatRadius) * intensity;
+      dm   = 0.025 + 0.055*heat;
+      dmed = 0.020 + 0.070*z.elderly*heat;   // elderly hit hardest
+      dr   = 0.012;
+      dg   = 0.018 + 0.012*heat;
+
+    } else { // Flood
       const fz = floodZoneFlags[i];
-      dm=0.02+0.07*fz; dmed=0.02+0.06*fz; dr=0.02+0.04*fz; dg=0.07*fz;
+      const { breaches } = disasterParams;
+      let floodStrength = 0;
+      breaches.forEach(b => {
+        const d = Math.sqrt((z.lat-b.lat)**2+(z.lon-b.lon)**2);
+        floodStrength = Math.max(floodStrength, Math.exp(-d/0.025)*b.severity);
+      });
+      dm   = 0.018 + 0.075*fz*floodStrength;
+      dmed = 0.018 + 0.065*fz*floodStrength;
+      dr   = 0.018 + 0.045*fz*floodStrength;
+      dg   = 0.060 * fz * floodStrength;
     }
 
-    dm  *=(1+2.0*shock); dmed*=(1+2.5*shock); dr*=(1+1.5*shock); dg*=(1+3.2*shock);
-    const ts=0.075;
+    const ts = 0.075;
     dm*=ts; dmed*=ts; dr*=ts; dg*=ts;
 
     z.grid -= dg;
-    const gf = clip(1-z.grid,0,1);
-    z.mobile  -= dm  *(1+gf);
-    z.medical -= dmed*(1+1.6*gf);
-    z.radio   -= dr  *(1+gf);
-    for(const k of ['mobile','medical','radio','grid']) z[k]=clip(z[k],0,1);
+    const gf = clip(1-z.grid, 0, 1);
+    z.mobile  -= dm   * (1 + gf);
+    z.medical -= dmed * (1 + 1.6*gf);
+    z.radio   -= dr   * (1 + gf);
+    for (const k of ['mobile','medical','radio','grid']) z[k] = clip(z[k],0,1);
 
     rates.mobile+=dm; rates.medical+=dmed; rates.radio+=dr; rates.grid+=dg;
   });
 
-  const n=zones.length;
-  return {mobile:rates.mobile/n,medical:rates.medical/n,radio:rates.radio/n,grid:rates.grid/n};
+  const n = zones.length;
+  return {mobile:rates.mobile/n, medical:rates.medical/n, radio:rates.radio/n, grid:rates.grid/n};
 }
 
 // ══════════════════════════════════════════
@@ -903,8 +1044,128 @@ function initMap(cityName){
 }
 
 // ══════════════════════════════════════════
-//  SIMULATION STATE
+//  AI TRIAGE — Groq ranks flagged people
 // ══════════════════════════════════════════
+let triageRan = false;
+
+async function runAITriage(flaggedPeople, disaster, city) {
+  if (!groqKey || triageRan || flaggedPeople.length === 0) {
+    if (!groqKey) {
+      document.getElementById('triage-title').innerHTML = '⚠ No Groq key — add key above for AI triage';
+      renderStaticTriage(flaggedPeople);
+    }
+    return;
+  }
+  triageRan = true;
+
+  document.getElementById('triage-title').innerHTML = '<span class="spinner"></span>AI analysing flagged residents...';
+  document.getElementById('triage-list').innerHTML = '';
+
+  const peopleData = flaggedPeople.map(p => ({
+    name: p.name,
+    priority: p.priority,
+    medicalNeeds: p.medical_tags ? p.medical_tags.join(', ') : '',
+    timeSensitive: p.time_sensitive || '',
+    alerts: p.alert_tags ? p.alert_tags.join(', ') : ''
+  }));
+
+  const prompt = `You are an emergency coordinator AI during a ${disaster} disaster in ${city}.
+The following residents have been flagged by the power vulnerability model as being at risk.
+Rank them in order of who needs a welfare call FIRST. Consider: life-critical equipment (ventilators, oxygen), isolation, communication barriers, and time-sensitive risks.
+
+Flagged residents:
+${JSON.stringify(peopleData, null, 2)}
+
+Disaster context: ${disasterParams.label || disaster}
+
+Return ONLY a JSON array — no markdown, no fences — like this:
+[
+  { "name": "Full Name", "callOrder": 1, "reason": "One sentence why they are highest priority", "estimatedWindowHours": 4 },
+  ...
+]
+Include ALL ${flaggedPeople.length} people ranked 1 to ${flaggedPeople.length}.`;
+
+  try {
+    const raw = await callGroq([{ role: 'user', content: prompt }], 800);
+    const cleaned = raw.replace(/```json|```/g, '').trim();
+    const ranked = JSON.parse(cleaned);
+
+    document.getElementById('triage-title').innerHTML = '✓ AI Call Queue — ranked by urgency';
+    renderTriageQueue(ranked, flaggedPeople);
+    logEv('ok', '🤖 AI triage complete — ' + ranked.length + ' residents ranked for calls');
+
+    // Simulate AI placing calls one by one
+    simulateAICalls(ranked, flaggedPeople);
+
+  } catch(e) {
+    logEv('warn', '⚠ AI triage error: ' + e.message + ' — using model-based ranking');
+    renderStaticTriage(flaggedPeople);
+  }
+}
+
+function renderTriageQueue(ranked, allPeople) {
+  const list = document.getElementById('triage-list');
+  list.innerHTML = '';
+  ranked.sort((a,b) => a.callOrder - b.callOrder).forEach(r => {
+    const person = allPeople.find(p => p.name === r.name) || {};
+    const pr = person.priority || 'HIGH';
+    const d = document.createElement('div');
+    d.className = 'triage-entry ' + pr;
+    d.id = 'triage-' + r.name.replace(/[^a-z]/gi,'');
+    d.innerHTML = `
+      <div class="te-rank">#${r.callOrder} · ${pr} · ~${r.estimatedWindowHours}h window</div>
+      <div class="te-name">${r.name}</div>
+      <div class="te-reason">${r.reason}</div>
+      <div class="te-calling" id="calling-${r.callOrder}" style="display:none">📞 AI calling...</div>
+    `;
+    list.appendChild(d);
+  });
+}
+
+function renderStaticTriage(people) {
+  // Fallback: rank by priority label + time_sensitive keywords
+  const scored = people.map(p => {
+    let score = p.priority === 'CRITICAL' ? 100 : p.priority === 'HIGH' ? 60 : 30;
+    if (p.time_sensitive && /ventilator|oxygen|battery/i.test(p.time_sensitive)) score += 40;
+    if (p.alert_tags && p.alert_tags.some(t => /caregiver|alone|absent/i.test(t))) score += 20;
+    return { ...p, score };
+  }).sort((a,b) => b.score - a.score);
+
+  const list = document.getElementById('triage-list');
+  list.innerHTML = '';
+  scored.forEach((p, i) => {
+    const d = document.createElement('div');
+    d.className = 'triage-entry ' + p.priority;
+    d.id = 'triage-' + p.name.replace(/[^a-z]/gi,'');
+    d.innerHTML = `
+      <div class="te-rank">#${i+1} · ${p.priority} (model ranked)</div>
+      <div class="te-name">${p.name}</div>
+      <div class="te-reason">${p.time_sensitive || p.priority_reason || 'High vulnerability zone'}</div>
+      <div class="te-calling" id="calling-${i+1}" style="display:none">📞 AI calling...</div>
+    `;
+    list.appendChild(d);
+  });
+  simulateAICalls(scored.map((p,i)=>({name:p.name,callOrder:i+1})), scored);
+}
+
+async function simulateAICalls(ranked, allPeople) {
+  // Stagger "calling" indicators to show the AI working through the queue
+  for (let i = 0; i < ranked.length; i++) {
+    await new Promise(r => setTimeout(r, 1800 + i * 1400));
+    if (!simRunning && tick > 5) break; // stop if sim ended
+    const callingEl = document.getElementById('calling-' + ranked[i].callOrder);
+    if (callingEl) {
+      callingEl.style.display = 'block';
+      document.getElementById('st-calls').textContent = i + 1;
+      logEv('ok', '📞 AI calling ' + ranked[i].name + ' (#' + ranked[i].callOrder + ' in queue)');
+      // Save the person to the dashboard
+      const person = allPeople.find(p => p.name === ranked[i].name);
+      if (person) savePersonFromModel(person);
+    }
+    await new Promise(r => setTimeout(r, 2200));
+    if (callingEl) callingEl.textContent = '✓ Call complete — card saved';
+  }
+}
 let zones=[], simInterval=null, simRunning=false;
 let tick=0, startTime=null;
 let currentCity='Houston', currentDisaster='Power Outage';
@@ -922,18 +1183,25 @@ function startSim(){
 
   const city=CITIES[currentCity];
   zones = generateData(city.lat, city.lon, 180);
-  initEpicentre(zones, currentDisaster, city.lat, city.lon);
+
+  // ← Randomize disaster parameters for this run
+  randomizeDisaster(currentDisaster, zones);
   if(currentDisaster==='Flood') assignFloodZones(zones);
 
   flaggedNames.clear(); flaggedCount=0; tick=0; startTime=Date.now(); tlHistory=[];
+  triageRan = false;
   resMarkers.forEach(m=>m.remove()); resMarkers=[];
   if(epicMarker){ epicMarker.remove(); epicMarker=null; }
+
+  // Reset triage panel
+  document.getElementById('triage-title').innerHTML = 'Waiting for critical threshold...';
+  document.getElementById('triage-list').innerHTML = '<div class="triage-empty">AI will rank flagged people by priority when zones go critical</div>';
 
   initMap(currentCity);
   renderIDW(zones, currentView);
   updatePanels(zones, null);
 
-  document.getElementById('nav-title').textContent='🗺️ '+currentCity+' — '+currentDisaster+' Model';
+  document.getElementById('nav-title').textContent='🗺️ '+currentCity+' — '+currentDisaster+' (seed '+simSeed+')';
   logEv('info','Simulation started: '+currentCity+' / '+currentDisaster);
   logEv('info',zones.length+' zones · Population: '+zones.reduce((s,z)=>s+z.population,0).toLocaleString());
   setPhase(1);
@@ -981,19 +1249,29 @@ function tickSim(){
   }
   if(tick===9){
     setPhase(4);
-    logEv('crit','⚠ Critical threshold breached — '+document.getElementById('st-critical').textContent+' zones below 40%');
+    const critCount = document.getElementById('st-critical').textContent;
+    logEv('crit','⚠ Critical threshold breached — '+critCount+' zones below 40%');
     document.getElementById('sim-bar').style.width='58%';
     document.getElementById('st-shelters').textContent='3';
+
+    // Collect all flagged people and send to AI triage
+    const flaggedPeople = [];
+    const cityResidents = CITY_RESIDENTS[currentCity] || [];
+    cityResidents.forEach(res => {
+      if (flaggedNames.has(res.name)) flaggedPeople.push(res);
+    });
+    if (flaggedPeople.length > 0) {
+      logEv('info', '🤖 Sending '+flaggedPeople.length+' flagged residents to AI triage...');
+      runAITriage(flaggedPeople, currentDisaster, currentCity);
+    }
   }
   if(tick===14){
     setPhase(5);
-    logEv('ok','📞 AI welfare calls initiated for '+flaggedCount+' flagged residents');
-    document.getElementById('st-calls').textContent=Math.max(flaggedCount*3,1);
+    logEv('ok','📞 AI working through call queue — residents prioritised by triage');
     document.getElementById('sim-bar').style.width='78%';
   }
   if(tick===20){
     document.getElementById('st-shelters').textContent='8';
-    document.getElementById('st-calls').textContent=Math.min(23,flaggedCount*5+3);
     document.getElementById('sim-bar').style.width='94%';
   }
 
@@ -1033,6 +1311,11 @@ function resetSim(){
   document.getElementById('status-circle').style.background='#30363d';
   document.getElementById('event-log').innerHTML='<div class="ev sys">[ Simulation reset ]</div>';
   tlCtx.clearRect(0,0,tlCanvas.width,tlCanvas.height);
+  triageRan = false;
+  disasterParams = {};
+  document.getElementById('triage-title').innerHTML = 'Waiting for critical threshold...';
+  document.getElementById('triage-list').innerHTML = '<div class="triage-empty">AI will rank flagged people by priority when zones go critical</div>';
+  document.getElementById('seed-badge').textContent = 'seed —';
   document.getElementById('nav-title').textContent='🗺️ Power Vulnerability Map';
   initMap(document.getElementById('city-sel').value);
 }
