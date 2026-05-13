@@ -125,3 +125,10 @@ disasterbridge/
 ## License
 
 MIT — built for humanitarian impact. Use it, fork it, improve it.
+
+---
+
+## Authors
+
+Tarun.N.M
+Mohammed Jassim
