@@ -130,5 +130,5 @@ MIT — built for humanitarian impact. Use it, fork it, improve it.
 
 ## Authors
 
-Tarun.N.M
-Mohammed Jassim
+- Tarun.N.M
+- Mohammed Jassim
